@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a0f1d">
 <title>Evento Prove</title>
 <link rel="manifest" href="manifest.json">
-<!-- Import del font Merriweather da Google Fonts -->
+<!-- Import del font Merriweather -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
     flex-direction: column; 
     align-items: center; 
     justify-content: center; 
-    gap: 24px; 
+    gap: 20px; 
     padding: 20px; 
     text-align: center; 
     min-height: 100vh; 
@@ -50,7 +50,6 @@
     border-radius: 8px;
     border: 1px solid rgba(0, 255, 136, 0.3);
   }
-  /* Stile Pulsanti Verde Neon */
   .menu { 
     width: 80%; 
     max-width: 300px; 
@@ -64,17 +63,24 @@
     color: #0a0f1d; 
     cursor: pointer; 
     box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
-    transition: transform 0.1s ease, background 0.2s ease;
   }
-  .menu:active {
-    transform: scale(0.97);
-    background: #00cc6a;
+  .btn-google {
+    background: #fff;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
   }
   .consenso { 
     font-size: 0.9rem; 
     opacity: .85; 
-    margin-top: 10px;
-    cursor: pointer;
+    margin-top: 5px;
+  }
+  #statoUtente {
+    font-size: 0.9rem;
+    color: #00ff88;
+    margin-bottom: -10px;
   }
 </style>
 </head>
@@ -85,11 +91,13 @@
   <div id="data"></div>
   <div id="tempoGioco">🎭 Ora di gioco: in caricamento...</div>
   
-  <!-- Pulsanti che ora portano a pagine separate -->
+  <div id="statoUtente">Accesso richiesto per partecipare</div>
+  <button class="menu btn-google" id="btnAccedi" onclick="accediGoogle()">🔵 Accedi con Google</button>
+  
   <button class="menu" onclick="window.location.href='mappa.html'">🗺️ Mappa</button>
   <button class="menu" onclick="window.location.href='prove.html'">📋 Elenco prove</button>
   
-  <label class="consenso">
+  <label class="consenso" id="boxConsenso" style="display:none;">
     <input type="checkbox" id="condividi" onchange="gestisciConsenso()">
     Condividi la mia posizione con l'organizzatore
   </label>
@@ -100,10 +108,36 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script>
-// ---------- Gestione Consenso al caricamento ----------
-window.addEventListener('DOMContentLoaded', () => {
-  if (localStorage.getItem('nomePartecipante')) {
-    document.getElementById('condividi').checked = true;
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let utenteCorrente = null;
+let statoGioco = null;
+
+// ---------- Autenticazione Google per partecipanti ----------
+function accediGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e => console.error("Errore login Google:", e));
+}
+
+auth.onAuthStateChanged(u => {
+  utenteCorrente = u;
+  const btn = document.getElementById('btnAccedi');
+  const stato = document.getElementById('statoUtente');
+  const box = document.getElementById('boxConsenso');
+
+  if (u) {
+    btn.style.display = 'none';
+    stato.textContent = `👤 Benvenuto, ${u.displayName || u.email}`;
+    box.style.display = 'block';
+    
+    // Salva il nome nel localStorage per usarlo nella mappa
+    localStorage.setItem('nomePartecipante', u.displayName || u.email);
+  } else {
+    btn.style.display = 'block';
+    stato.textContent = "Effettua l'accesso per partecipare al gioco";
+    box.style.display = 'none';
+    localStorage.removeItem('nomePartecipante');
   }
 });
 
@@ -118,24 +152,10 @@ function aggiornaOrologio() {
 setInterval(aggiornaOrologio, 1000);
 aggiornaOrologio();
 
-// ---------- Firebase & Orologio di Gioco ----------
-firebase.initializeApp(FIREBASE_CONFIG);
-const db = firebase.firestore();
-let uid = null;
-let statoGioco = null, ascoltaGioco = false;
-
-firebase.auth().signInAnonymously().catch(e => console.error('Login anonimo fallito', e));
-
-firebase.auth().onAuthStateChanged(u => {
-  if (!u) return;
-  uid = u.uid;
-  if (ascoltaGioco) return;
-  ascoltaGioco = true;
-  
-  db.collection('config').doc('evento').onSnapshot(doc => {
-    statoGioco = doc.data() || null;
-  }, err => console.error('Lettura orologio fallita', err));
-});
+// ---------- Orologio di Gioco ----------
+db.collection('config').doc('evento').onSnapshot(doc => {
+  statoGioco = doc.data() || null;
+}, err => console.error('Lettura orologio fallita', err));
 
 setInterval(() => {
   document.getElementById('tempoGioco').textContent = statoGioco
@@ -143,20 +163,11 @@ setInterval(() => {
     : '🎭 Ora di gioco: non ancora avviata';
 }, 1000);
 
-// ---------- Consenso condivisione ----------
+// ---------- Gestione Consenso e Posizione ----------
 function gestisciConsenso() {
   const attivo = document.getElementById('condividi').checked;
-  if (attivo && !localStorage.getItem('nomePartecipante')) {
-    const nome = prompt('Come ti chiami? (visibile solo all\'organizzatore)');
-    if (nome) {
-      localStorage.setItem('nomePartecipante', nome.trim());
-    } else {
-      document.getElementById('condividi').checked = false;
-    }
-  }
-  if (!attivo && uid) {
-    localStorage.removeItem('nomePartecipante');
-    db.collection('posizioni').doc(uid).delete().catch(() => {});
+  if (!attivo && utenteCorrente) {
+    db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
   }
 }
 </script>
