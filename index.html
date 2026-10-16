@@ -18,8 +18,10 @@
   body { 
     margin: 0; 
     font-family: 'Merriweather', serif; 
-    background: #0a0f1d; 
+    /* Sfondo blu scuro con riflessi sfumati verde neon */
+    background: radial-gradient(circle at 50% 20%, rgba(0, 255, 136, 0.12) 0%, rgba(10, 15, 29, 1) 70%), #0a0f1d; 
     color: #f5f5f5; 
+    min-height: 100vh;
   }
   #home { 
     display: flex; 
@@ -31,24 +33,20 @@
     text-align: center; 
     min-height: 100vh; 
   }
-  #orologio { 
-    font-size: 3.5rem; 
+  /* Orologio di gioco grande e verde neon */
+  #orologioGioco { 
+    font-size: 3.8rem; 
     font-variant-numeric: tabular-nums; 
     font-weight: 700; 
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
     letter-spacing: -1px;
+    margin: 10px 0;
   }
-  #data { 
+  #dataReale { 
     opacity: .75; 
     text-transform: capitalize; 
-    font-size: 1.05rem;
-  }
-  #tempoGioco {
-    font-size: 1.2rem; 
-    opacity: .9;
-    background: rgba(0, 255, 136, 0.1);
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
+    font-size: 0.95rem;
   }
   .menu { 
     width: 80%; 
@@ -63,7 +61,9 @@
     color: #0a0f1d; 
     cursor: pointer; 
     box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+    transition: transform 0.1s ease;
   }
+  .menu:active { transform: scale(0.97); }
   .btn-google {
     background: #fff;
     color: #333;
@@ -75,32 +75,68 @@
   .consenso { 
     font-size: 0.9rem; 
     opacity: .85; 
-    margin-top: 5px;
+    margin-top: 10px;
+    cursor: pointer;
   }
   #statoUtente {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #00ff88;
-    margin-bottom: -10px;
+    margin-bottom: 5px;
+  }
+  /* Contenitore protetto: visibile solo dopo il login */
+  #contenutoProtetto {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+  }
+  #sezioneLogin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    background: rgba(17, 24, 39, 0.7);
+    padding: 30px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   }
 </style>
 </head>
 <body>
 
 <div id="home">
-  <div id="orologio">--:--:--</div>
-  <div id="data"></div>
-  <div id="tempoGioco">🎭 Ora di gioco: in caricamento...</div>
   
-  <div id="statoUtente">Accesso richiesto per partecipare</div>
-  <button class="menu btn-google" id="btnAccedi" onclick="accediGoogle()">🔵 Accedi con Google</button>
-  
-  <button class="menu" onclick="window.location.href='mappa.html'">🗺️ Mappa</button>
-  <button class="menu" onclick="window.location.href='prove.html'">📋 Elenco prove</button>
-  
-  <label class="consenso" id="boxConsenso" style="display:none;">
-    <input type="checkbox" id="condividi" onchange="gestisciConsenso()">
-    Condividi la mia posizione con l'organizzatore
-  </label>
+  <!-- SCHERMATA DI LOGIN OBBLIGATORIO (Visibile solo se NON loggato) -->
+  <div id="sezioneLogin">
+    <h2 style="margin: 0 0 10px 0; font-size: 1.4rem;">Evento Prove</h2>
+    <p style="font-size: 0.9rem; opacity: 0.8; margin: 0 0 15px 0;">Accedi con Google per entrare nel gioco</p>
+    <button class="menu btn-google" onclick="accediGoogle()">🔵 Accedi con Google</button>
+  </div>
+
+  <!-- CONTENUTO PRINCIPALE DEL GIOCO (Sbloccato dopo il login) -->
+  <div id="contenutoProtetto">
+    <div id="statoUtente"></div>
+    
+    <!-- Orologio di gioco grande in verde neon -->
+    <div>
+      <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: -5px;">⏰ Ora di gioco (x2)</div>
+      <div id="orologioGioco">00:00:00</div>
+      <div id="dataReale"></div>
+    </div>
+    
+    <button class="menu" onclick="window.location.href='mappa.html'">🗺️ Mappa</button>
+    <button class="menu" onclick="window.location.href='prove.html'">📋 Elenco prove</button>
+    
+    <label class="consenso">
+      <input type="checkbox" id="condividi" onchange="gestisciConsenso()">
+      Condividi la mia posizione con l'organizzatore
+    </label>
+  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -114,7 +150,7 @@ const db = firebase.firestore();
 let utenteCorrente = null;
 let statoGioco = null;
 
-// ---------- Autenticazione Google per partecipanti ----------
+// ---------- Login Google ----------
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider).catch(e => console.error("Errore login Google:", e));
@@ -122,52 +158,60 @@ function accediGoogle() {
 
 auth.onAuthStateChanged(u => {
   utenteCorrente = u;
-  const btn = document.getElementById('btnAccedi');
-  const stato = document.getElementById('statoUtente');
-  const box = document.getElementById('boxConsenso');
+  const sezioneLogin = document.getElementById('sezioneLogin');
+  const contenutoProtetto = document.getElementById('contenutoProtetto');
+  const statoUtente = document.getElementById('statoUtente');
 
   if (u) {
-    btn.style.display = 'none';
-    stato.textContent = `👤 Benvenuto, ${u.displayName || u.email}`;
-    box.style.display = 'block';
-    
-    // Salva il nome nel localStorage per usarlo nella mappa
+    // Utente loggato: nasconde il login e mostra l'app
+    sezioneLogin.style.display = 'none';
+    contenutoProtetto.style.display = 'flex';
+    statoUtente.textContent = `👤 Benvenuto, ${u.displayName || u.email}`;
     localStorage.setItem('nomePartecipante', u.displayName || u.email);
+    
+    // Se aveva già spuntato il consenso in precedenza, riattiva il checkbox
+    if (localStorage.getItem('consensoPosizione') === 'true') {
+      document.getElementById('condividi').checked = true;
+    }
   } else {
-    btn.style.display = 'block';
-    stato.textContent = "Effettua l'accesso per partecipare al gioco";
-    box.style.display = 'none';
+    // Utente non loggato: mostra solo il login
+    sezioneLogin.style.display = 'flex';
+    contenutoProtetto.style.display = 'none';
     localStorage.removeItem('nomePartecipante');
   }
 });
 
-// ---------- Orologio Reale ----------
-function aggiornaOrologio() {
+// ---------- Data reale corrente (per sottotitolo) ----------
+function aggiornaDataReale() {
   const o = new Date();
-  document.getElementById('orologio').textContent =
-    o.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  document.getElementById('data').textContent =
+  document.getElementById('dataReale').textContent =
     o.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
 }
-setInterval(aggiornaOrologio, 1000);
-aggiornaOrologio();
+aggiornaDataReale();
 
-// ---------- Orologio di Gioco ----------
+// ---------- Sincronizzazione e visualizzazione Orologio di Gioco ----------
 db.collection('config').doc('evento').onSnapshot(doc => {
   statoGioco = doc.data() || null;
 }, err => console.error('Lettura orologio fallita', err));
 
 setInterval(() => {
-  document.getElementById('tempoGioco').textContent = statoGioco
-    ? '🎭 Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco))
-    : '🎭 Ora di gioco: non ancora avviata';
+  if (statoGioco) {
+    document.getElementById('orologioGioco').textContent = formatoGioco(tempoGioco(statoGioco));
+  } else {
+    document.getElementById('orologioGioco').textContent = "00:00:00";
+  }
 }, 1000);
 
-// ---------- Gestione Consenso e Posizione ----------
+// ---------- Gestione Consenso ----------
 function gestisciConsenso() {
   const attivo = document.getElementById('condividi').checked;
-  if (!attivo && utenteCorrente) {
-    db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
+  if (attivo) {
+    localStorage.setItem('consensoPosizione', 'true');
+  } else {
+    localStorage.removeItem('consensoPosizione');
+    if (utenteCorrente) {
+      db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
+    }
   }
 }
 </script>
