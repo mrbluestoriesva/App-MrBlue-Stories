@@ -216,11 +216,25 @@ let modalitaRegistrazione = false;
 // 1. Accesso con Google (usando popup con fallback sicuro)
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(e => {
-    console.error("Popup bloccato, provo con redirect:", e);
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  if (mobile) {
+    // Su telefono il popup è spesso bloccato: usiamo il redirect
     auth.signInWithRedirect(provider);
-  });
+  } else {
+    auth.signInWithPopup(provider).catch(e => {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
+      }
+    });
+  }
 }
+
+// Mostra eventuali errori dopo il ritorno dal redirect
+auth.getRedirectResult().catch(e => {
+  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
+});
 
 // 2. Accesso / Registrazione con Email e Password
 function gestisciEmailPassword() {
@@ -269,6 +283,7 @@ auth.onAuthStateChanged(u => {
   const statoUtente = document.getElementById('statoUtente');
 
   if (u) {
+   avviaAscoltoGioco();
     sezioneLogin.style.display = 'none';
     contenutoProtetto.style.display = 'flex';
     const nomeVisualizzato = u.displayName || u.email;
@@ -293,9 +308,14 @@ function aggiornaDataReale() {
 }
 aggiornaDataReale();
 
-db.collection('config').doc('evento').onSnapshot(doc => {
-  statoGioco = doc.data() || null;
-}, err => console.error('Lettura orologio fallita', err));
+let ascoltaGioco = false;
+function avviaAscoltoGioco() {
+  if (ascoltaGioco) return;
+  ascoltaGioco = true;
+  db.collection('config').doc('evento').onSnapshot(doc => {
+    statoGioco = doc.data() || null;
+  }, err => console.error('Lettura orologio fallita', err));
+}
 
 setInterval(() => {
   if (statoGioco) {
