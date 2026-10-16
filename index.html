@@ -217,19 +217,23 @@ let modalitaRegistrazione = false;
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  const errBox = document.getElementById('erroreLogin');
+  errBox.textContent = '';
 
-  if (mobile) {
-    // Su telefono il popup è spesso bloccato: usiamo il redirect
-    auth.signInWithRedirect(provider);
-  } else {
-    auth.signInWithPopup(provider).catch(e => {
-      if (e.code !== 'auth/popup-closed-by-user') {
-        document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
-      }
-    });
-  }
+  auth.signInWithPopup(provider).catch(e => {
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+      auth.signInWithRedirect(provider);
+    } else {
+      errBox.textContent = 'Accesso Google fallito: ' + e.code;
+    }
+  });
 }
+
+// Gestisce il ritorno dal redirect (se è stato usato)
+auth.getRedirectResult().catch(e => {
+  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
+});
 
 // Mostra eventuali errori dopo il ritorno dal redirect
 auth.getRedirectResult().catch(e => {
