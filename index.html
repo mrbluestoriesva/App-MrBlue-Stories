@@ -152,7 +152,14 @@ auth.getRedirectResult().catch(e => console.error("Errore redirect Google:", e))
 // Login con Reindirizzamento (perfetto per mobile)
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider).catch(e => console.error("Errore login Google:", e));
+  auth.signInWithRedirect(provider)
+    .then(() => {
+      console.log("Reindirizzamento a Google avviato...");
+    })
+    .catch(error => {
+      console.error("Errore critico Google Sign-In:", error.code, error.message);
+      alert("Errore di accesso: " + error.message);
+    });
 }
 
 auth.onAuthStateChanged(u => {
