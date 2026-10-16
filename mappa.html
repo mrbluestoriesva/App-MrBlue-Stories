@@ -8,60 +8,17 @@
 <meta name="theme-color" content="#0a0f1d">
 <title>Mappa - Evento Prove</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<!-- Import del font Merriweather -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  body { 
-    margin: 0; 
-    font-family: 'Merriweather', serif; 
-    background: #0a0f1d; 
-    color: #f5f5f5; 
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-  .barra { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 14px 18px; 
-    background: #111827; 
-    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
-  }
-  .indietro { 
-    background: none; 
-    border: none; 
-    color: #00ff88; 
-    font-family: 'Merriweather', serif;
-    font-size: 1rem; 
-    font-weight: 700;
-    cursor: pointer; 
-  }
-  .barra b {
-    font-size: 1.1rem;
-    letter-spacing: 0.5px;
-  }
-  #mappa { 
-    flex-grow: 1; 
-    width: 100%; 
-  }
-  #posizione { 
-    padding: 14px 18px; 
-    font-size: 0.9rem; 
-    line-height: 1.4; 
-    background: #111827;
-    border-top: 1px solid rgba(0, 255, 136, 0.2);
-    text-align: center;
-  }
-  .leaflet-popup-content { 
-    font-size: 0.95rem; 
-    font-family: 'Merriweather', serif;
-    color: #0a0f1d; 
-  }
+  body { margin: 0; font-family: 'Merriweather', serif; background: #0a0f1d; color: #f5f5f5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: #111827; border-bottom: 1px solid rgba(0, 255, 136, 0.2); }
+  .indietro { background: none; border: none; color: #00ff88; font-family: 'Merriweather', serif; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  .barra b { font-size: 1.1rem; }
+  #mappa { flex-grow: 1; width: 100%; }
+  #posizione { padding: 14px 18px; font-size: 0.9rem; line-height: 1.4; background: #111827; border-top: 1px solid rgba(0, 255, 136, 0.2); text-align: center; }
 </style>
 </head>
 <body>
@@ -82,23 +39,21 @@
 <script src="config.js"></script>
 <script src="prove.js"></script>
 <script>
-// ---------- Firebase (per invio posizione se attivo) ----------
 firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
 const db = firebase.firestore();
-let uid = null;
-firebase.auth().signInAnonymously().catch(e => console.error('Login anonimo fallito', e));
-firebase.auth().onAuthStateChanged(u => { if (u) uid = u.uid; });
+let utenteCorrente = null;
 
-// ---------- Mappa limitata a Luvinate ----------
+auth.onAuthStateChanged(u => { utenteCorrente = u; });
+
+// Mappa Leaflet
 const ICONE = { fortuna: '🍀', mondo: '🌍', animali: '🐾' };
 const icona = tipo => ICONE[tipo] || '⭐';
 
 const bounds = L.latLngBounds([ZONA.latMin, ZONA.lngMin], [ZONA.latMax, ZONA.lngMax]);
 const mappaLeaflet = L.map('mappa', {
-  minZoom: ZONA.zoom - 1,
-  maxZoom: 18,
-  maxBounds: bounds.pad(0.2),
-  maxBoundsViscosity: 1.0
+  minZoom: ZONA.zoom - 1, maxZoom: 18,
+  maxBounds: bounds.pad(0.2), maxBoundsViscosity: 1.0
 }).setView(ZONA.centro, ZONA.zoom);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -111,7 +66,6 @@ PROVE.forEach(p => {
   );
 });
 
-// ---------- Distanza (Haversine) ----------
 function distanza(lat1, lng1, lat2, lng2) {
   const R = 6371000, rad = x => x * Math.PI / 180;
   const dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
@@ -119,7 +73,6 @@ function distanza(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// ---------- Geolocalizzazione ----------
 let markerMio = null, ultimoInvio = 0;
 const testoPosizione = document.getElementById('posizione');
 
@@ -144,13 +97,13 @@ navigator.geolocation.watchPosition(pos => {
     testoPosizione.textContent = "📍 Sei fuori dalla zona dell'evento.";
   }
 
-  // Invio posizione se il consenso è attivo in localStorage
-  if (localStorage.getItem('nomePartecipante') && uid && dentro && Date.now() - ultimoInvio > 30000) {
+  // Invia posizione se loggato e consenso attivo
+  const condividiAttivo = localStorage.getItem('nomePartecipante');
+  if (condividiAttivo && utenteCorrente && dentro && Date.now() - ultimoInvio > 30000) {
     ultimoInvio = Date.now();
-    const nome = localStorage.getItem('nomePartecipante');
-    db.collection('posizioni').doc(uid).set({
+    db.collection('posizioni').doc(utenteCorrente.uid).set({
       lat, lng,
-      nome: nome.substring(0, 30),
+      nome: utenteCorrente.displayName || utenteCorrente.email,
       aggiornato: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(e => console.error('Invio posizione fallito', e));
   }
