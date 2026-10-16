@@ -159,6 +159,11 @@ auth.getRedirectResult().catch(e => {
   document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
 });
 
+// Gestisce il ritorno dal redirect (se è stato usato)
+auth.getRedirectResult().catch(e => {
+  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
+});
+
 // ---------- Login email/password ----------
 function gestisciEmailPassword() {
   const email = document.getElementById('emailInput').value.trim();
