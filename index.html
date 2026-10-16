@@ -4,216 +4,137 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1d">
 <title>Evento Prove</title>
 <link rel="manifest" href="manifest.json">
-<!-- Import del font Merriweather -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="gioco.js"></script>
 <style>
   * { box-sizing: border-box; }
-  body { 
-    margin: 0; 
-    font-family: 'Merriweather', serif; 
-    background: radial-gradient(circle at 50% 20%, rgba(0, 255, 136, 0.12) 0%, rgba(10, 15, 29, 1) 70%), #0a0f1d; 
-    color: #f5f5f5; 
-    min-height: 100vh;
+  body {
+    margin: 0; font-family: 'Merriweather', serif; color: #f5f5f5; min-height: 100vh;
+    background: radial-gradient(circle at 50% 20%, rgba(0,255,136,0.12) 0%, #0a0f1d 70%), #0a0f1d;
   }
-  #home { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 20px; 
-    padding: 20px; 
-    text-align: center; 
-    min-height: 100vh; 
-  }
-  #orologioGioco { 
-    font-size: 3.8rem; 
-    font-variant-numeric: tabular-nums; 
-    font-weight: 700; 
-    color: #00ff88;
-    text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-    letter-spacing: -1px;
-    margin: 10px 0;
-  }
-  #dataReale { 
-    opacity: .75; 
-    text-transform: capitalize; 
-    font-size: 0.95rem;
-  }
-  .menu { 
-    width: 80%; 
-    max-width: 300px; 
-    padding: 16px; 
-    font-size: 1.15rem; 
-    font-family: 'Merriweather', serif;
-    font-weight: 700;
-    border: none; 
-    border-radius: 14px; 
-    background: #00ff88; 
-    color: #0a0f1d; 
-    cursor: pointer; 
-    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
-    transition: transform 0.1s ease;
-  }
-  .menu:active { transform: scale(0.97); }
-  
-  .btn-google {
-    background: #fff;
-    color: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    margin-bottom: 10px;
-    font-size: 1rem;
-    padding: 12px;
-  }
-  
-  .input-auth {
-    width: 100%;
-    padding: 12px;
-    margin: 6px 0;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
-    background: #111827;
-    color: #fff;
-    font-family: 'Merriweather', serif;
-    font-size: 0.95rem;
-  }
+  .schermata { display: none; min-height: 100vh; }
+  .schermata.attiva { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; text-align: center; }
+  .vista.attiva { display: block; justify-content: flex-start; text-align: left; padding: 0; }
 
-  .btn-email {
-    background: #00ff88;
-    color: #0a0f1d;
-    width: 100%;
-    padding: 12px;
-    margin-top: 8px;
-    border-radius: 8px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: 'Merriweather', serif;
-  }
+  .card { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-radius: 20px; padding: 24px 20px; max-width: 340px; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .card h2 { margin: 0 0 4px; font-size: 1.4rem; }
+  .card p { margin: 0; font-size: 0.9rem; opacity: 0.85; line-height: 1.4; }
 
-  .consenso { 
-    font-size: 0.9rem; 
-    opacity: .85; 
-    margin-top: 10px;
-    cursor: pointer;
-  }
-  #statoUtente {
-    font-size: 0.95rem;
-    color: #00ff88;
-    margin-bottom: 5px;
-  }
-  #contenutoProtetto {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-  }
-  #sezioneLogin {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    background: rgba(17, 24, 39, 0.85);
-    backdrop-filter: blur(10px);
-    padding: 24px 20px;
-    border-radius: 20px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
-    max-width: 340px;
-    width: 100%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
-  .divider {
-    font-size: 0.85rem;
-    opacity: 0.6;
-    margin: 6px 0;
-  }
-  .toggle-auth {
-    font-size: 0.85rem;
-    color: #00ff88;
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin-top: 8px;
-    text-decoration: underline;
-  }
-  #erroreLogin {
-    color: #ff4d4d;
-    font-size: 0.85rem;
-    margin-top: 5px;
-  }
+  .btn { width: 100%; padding: 14px; font-family: inherit; font-size: 1rem; font-weight: 700; border: none; border-radius: 12px; background: #00ff88; color: #0a0f1d; cursor: pointer; }
+  .btn-bianco { background: #fff; color: #333; }
+  .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; font-size: 0.85rem; }
+  .btn-link { background: none; border: none; color: #00ff88; text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+
+  .input-auth { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.3); background: #111827; color: #fff; font-family: inherit; font-size: 0.95rem; }
+  .errore { color: #ff4d4d; font-size: 0.85rem; min-height: 1em; }
+  .divider { font-size: 0.8rem; opacity: 0.6; }
+
+  #orologioGioco { font-size: 3.6rem; font-variant-numeric: tabular-nums; font-weight: 700; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  #dataReale { opacity: 0.75; text-transform: capitalize; font-size: 0.95rem; }
+  #statoUtente { color: #00ff88; font-size: 0.95rem; }
+  .menu { width: 80%; max-width: 300px; }
+
+  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; }
+  .barra button { background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer; font-family: inherit; }
+  #mappa { height: 65vh; width: 100%; }
+  #posizioneMappa { padding: 12px 16px; font-size: 0.95rem; line-height: 1.4; }
+  .prova { background: #16213e; margin: 10px 16px; padding: 14px; border-radius: 12px; }
+  .prova small { opacity: 0.7; }
+  .leaflet-popup-content { font-size: 0.95rem; color: #222; }
 </style>
 </head>
 <body>
 
-<div id="home">
-  
-  <!-- SCHERMATA DI LOGIN OBBLIGATORIO (Google + Email/Password) -->
-  <div id="sezioneLogin">
-    <h2 style="margin: 0 0 5px 0; font-size: 1.4rem;">Evento Prove</h2>
-    <p style="font-size: 0.85rem; opacity: 0.8; margin: 0 0 15px 0;">Accedi per partecipare al gioco</p>
-    
-    <!-- Pulsante Google -->
-    <button class="menu btn-google" onclick="accediGoogle()">🔵 Accedi con Google</button>
-    
+<!-- 1. LOGIN -->
+<div id="schermataLogin" class="schermata attiva">
+  <div class="card">
+    <h2>Evento Prove</h2>
+    <p>Accedi per partecipare al gioco</p>
+    <button class="btn btn-bianco" onclick="accediGoogle()">🔵 Accedi con Google</button>
     <div class="divider">oppure usa l'email</div>
-    
-    <!-- Form Email / Password -->
     <input type="email" id="emailInput" class="input-auth" placeholder="Email">
     <input type="password" id="passwordInput" class="input-auth" placeholder="Password">
-    <button class="btn-email" id="btnEmailAction" onclick="gestisciEmailPassword()">Accedi</button>
-    
-    <p id="erroreLogin"></p>
-
-    <button class="toggle-auth" onclick="cambiaModalitaAuth()">Non hai un account? Registrati</button>
+    <button class="btn" id="btnEmailAction" onclick="gestisciEmailPassword()">Accedi</button>
+    <p id="erroreLogin" class="errore"></p>
+    <button class="btn-link" onclick="cambiaModalitaAuth()">Non hai un account? Registrati</button>
   </div>
+</div>
 
-  <!-- CONTENUTO PRINCIPALE DEL GIOCO (Visibile dopo il login) -->
-  <div id="contenutoProtetto">
-    <div id="statoUtente"></div>
-    
-    <div>
-      <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: -5px;">⏰ Ora di gioco (x2)</div>
-      <div id="orologioGioco">00:00:00</div>
-      <div id="dataReale"></div>
-    </div>
-    
-    <button class="menu" onclick="window.location.href='mappa.html'">🗺️ Mappa</button>
-    <button class="menu" onclick="window.location.href='prove.html'">📋 Elenco prove</button>
-    
-    <label class="consenso">
-      <input type="checkbox" id="condividi" onchange="gestisciConsenso()">
-      Condividi la mia posizione con l'organizzatore
-    </label>
-
-    <button onclick="auth.signOut()" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-family:'Merriweather',serif; font-size:0.85rem; margin-top:10px;">Esci dall'account</button>
+<!-- 2. POSIZIONE OBBLIGATORIA -->
+<div id="schermataPosizione" class="schermata">
+  <div class="card">
+    <h2>📍 Serve la posizione</h2>
+    <p>Per partecipare al gioco devi consentire la posizione. Viene condivisa solo con l'organizzatore mentre sei nella zona dell'evento.</p>
+    <button class="btn" onclick="richiediPosizione()">Consenti posizione</button>
+    <p id="errorePosizione" class="errore"></p>
+    <button class="btn btn-rosso" onclick="rifiutaPosizione()">Non accetto, torna al login</button>
   </div>
+</div>
 
+<!-- 3. SCHERMATA PRINCIPALE -->
+<div id="schermataGioco" class="schermata">
+  <div id="statoUtente"></div>
+  <div style="font-size:0.9rem; opacity:0.8;">⏰ Ora di gioco (x2)</div>
+  <div id="orologioGioco">00:00:00</div>
+  <div id="dataReale"></div>
+  <button class="btn menu" onclick="vai('vistaMappa')">🗺️ Mappa</button>
+  <button class="btn menu" onclick="vai('vistaElenco')">📋 Elenco prove</button>
+  <p style="font-size:0.8rem; opacity:0.7;">📡 La tua posizione è condivisa con l'organizzatore</p>
+  <button class="btn btn-rosso menu" onclick="esci()">Esci dall'account</button>
+</div>
+
+<!-- 4. MAPPA -->
+<div id="vistaMappa" class="schermata vista">
+  <div class="barra"><button onclick="vai('schermataGioco')">← Indietro</button><b>Mappa</b><span></span></div>
+  <div id="mappa"></div>
+  <div id="posizioneMappa">📍 In attesa della posizione...</div>
+</div>
+
+<!-- 5. ELENCO PROVE -->
+<div id="vistaElenco" class="schermata vista">
+  <div class="barra"><button onclick="vai('schermataGioco')">← Indietro</button><b>Prove</b><span></span></div>
+  <div id="lista"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
+<script src="prove.js"></script>
 <script>
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
-let utenteCorrente = null;
-let statoGioco = null;
-let modalitaRegistrazione = false;
 
-// 1. Accesso con Google (usando popup con fallback sicuro)
+let utenteCorrente = null;
+let posizioneOk = false;
+let watchId = null;
+let ultimoInvio = 0;
+let statoGioco = null;
+let ascoltaGioco = false;
+let modalitaRegistrazione = false;
+let markerMio = null;
+let avvisoLogin = '';
+
+// ---------- Utilità schermate ----------
+function mostra(id) {
+  document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
+  document.getElementById(id).classList.add('attiva');
+}
+
+function vai(id) {
+  mostra(id);
+  if (id === 'vistaMappa') setTimeout(() => mappaLeaflet.invalidateSize(), 150);
+}
+
+// ---------- Login Google ----------
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -230,17 +151,11 @@ function accediGoogle() {
   });
 }
 
-// Gestisce il ritorno dal redirect (se è stato usato)
 auth.getRedirectResult().catch(e => {
   document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
 });
 
-// Mostra eventuali errori dopo il ritorno dal redirect
-auth.getRedirectResult().catch(e => {
-  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
-});
-
-// 2. Accesso / Registrazione con Email e Password
+// ---------- Login email/password ----------
 function gestisciEmailPassword() {
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value.trim();
@@ -251,68 +166,152 @@ function gestisciEmailPassword() {
     errBox.textContent = 'Inserisci email e password.';
     return;
   }
-
   if (modalitaRegistrazione) {
     auth.createUserWithEmailAndPassword(email, password).catch(e => {
       errBox.textContent = 'Errore registrazione: ' + e.message;
     });
   } else {
-    auth.signInWithEmailAndPassword(email, password).catch(e => {
+    auth.signInWithEmailAndPassword(email, password).catch(() => {
       errBox.textContent = 'Credenziali non valide.';
     });
   }
 }
 
-// Cambia testo tra Login e Registrazione
 function cambiaModalitaAuth() {
   modalitaRegistrazione = !modalitaRegistrazione;
-  const btn = document.getElementById('btnEmailAction');
-  const toggle = document.querySelector('.toggle-auth');
+  document.getElementById('btnEmailAction').textContent = modalitaRegistrazione ? 'Registrati' : 'Accedi';
+  document.querySelector('.btn-link').textContent = modalitaRegistrazione
+    ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati';
   document.getElementById('erroreLogin').textContent = '';
-
-  if (modalitaRegistrazione) {
-    btn.textContent = 'Registrati';
-    toggle.textContent = 'Hai già un account? Accedi';
-  } else {
-    btn.textContent = 'Accedi';
-    toggle.textContent = "Non hai un account? Registrati";
-  }
 }
 
-// Stato di autenticazione unificato
+// ---------- Stato di accesso ----------
 auth.onAuthStateChanged(u => {
   utenteCorrente = u;
-  const sezioneLogin = document.getElementById('sezioneLogin');
-  const contenutoProtetto = document.getElementById('contenutoProtetto');
-  const statoUtente = document.getElementById('statoUtente');
 
-  if (u) {
-   avviaAscoltoGioco();
-    sezioneLogin.style.display = 'none';
-    contenutoProtetto.style.display = 'flex';
-    const nomeVisualizzato = u.displayName || u.email;
-    statoUtente.textContent = `👤 Benvenuto, ${nomeVisualizzato}`;
-    localStorage.setItem('nomePartecipante', nomeVisualizzato);
-    
-    if (localStorage.getItem('consensoPosizione') === 'true') {
-      document.getElementById('condividi').checked = true;
-    }
+  if (!u) {
+    stopPosizione();
+    statoGioco = null;
+    mostra('schermataLogin');
+    document.getElementById('erroreLogin').textContent = avvisoLogin;
+    avvisoLogin = '';
+    return;
+  }
+
+  avviaAscoltoGioco();
+  document.getElementById('statoUtente').textContent = '👤 ' + (u.displayName || u.email);
+
+  if (posizioneOk) {
+    mostra('schermataGioco');
   } else {
-    sezioneLogin.style.display = 'flex';
-    contenutoProtetto.style.display = 'none';
-    localStorage.removeItem('nomePartecipante');
+    mostra('schermataPosizione');
+    controllaPermessoPosizione();
   }
 });
 
-// Orologio reale e di gioco
-function aggiornaDataReale() {
-  const o = new Date();
-  document.getElementById('dataReale').textContent =
-    o.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+// Se il permesso è già concesso, parte da solo. Altrimenti serve il pulsante.
+function controllaPermessoPosizione() {
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(p => {
+      if (p.state === 'granted') avviaPosizione();
+    }).catch(() => {});
+  }
 }
-aggiornaDataReale();
 
-let ascoltaGioco = false;
+// ---------- Posizione obbligatoria ----------
+function richiediPosizione() {
+  const err = document.getElementById('errorePosizione');
+  err.textContent = '';
+  if (!navigator.geolocation) {
+    err.textContent = 'Il browser non supporta la geolocalizzazione.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    () => avviaPosizione(),
+    e => {
+      if (e.code === 1) { rifiutaPosizione(); return; }
+      err.textContent = "Impossibile ottenere la posizione. Riprova all'aperto o con il GPS attivo.";
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function avviaPosizione() {
+  if (posizioneOk || !utenteCorrente) return;
+  posizioneOk = true;
+  mostra('schermataGioco');
+
+  watchId = navigator.geolocation.watchPosition(aggiornaPosizione, e => {
+    // Permesso revocato mentre usa l'app: disconnessione
+    if (e.code === 1) rifiutaPosizione();
+  }, { enableHighAccuracy: true, maximumAge: 5000 });
+}
+
+// Utente che nega o revoca la posizione: lo riporta al login
+function rifiutaPosizione() {
+  if (utenteCorrente) {
+    db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
+  }
+  avvisoLogin = "Posizione non consentita: per usare l'app devi condividerla. Riattivala nelle impostazioni del browser e accedi di nuovo.";
+  auth.signOut();
+}
+
+function stopPosizione() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+  posizioneOk = false;
+}
+
+function distanza(lat1, lng1, lat2, lng2) {
+  const R = 6371000, rad = x => x * Math.PI / 180;
+  const dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function aggiornaPosizione(pos) {
+  const { latitude: lat, longitude: lng } = pos.coords;
+
+  if (!markerMio) {
+    markerMio = L.circleMarker([lat, lng], { radius: 9, color: '#fff', fillColor: '#1e90ff', fillOpacity: 1 }).addTo(mappaLeaflet);
+  } else {
+    markerMio.setLatLng([lat, lng]);
+  }
+
+  const dentro = lat >= ZONA.latMin && lat <= ZONA.latMax && lng >= ZONA.lngMin && lng <= ZONA.lngMax;
+  const testo = document.getElementById('posizioneMappa');
+
+  if (dentro) {
+    let vicina = null, min = Infinity;
+    PROVE.forEach(p => {
+      const d = distanza(lat, lng, p.lat, p.lng);
+      if (d < min) { min = d; vicina = p; }
+    });
+    testo.innerHTML = `📍 Ti trovi a Luvinate. Prova più vicina: <b>${vicina.nome}</b> (${Math.round(min)} m)`;
+  } else {
+    testo.textContent = "📍 Sei fuori dalla zona dell'evento: la posizione non viene inviata.";
+  }
+
+  // Invio all'organizzatore: solo dentro la zona, al massimo ogni 20 secondi
+  if (dentro && utenteCorrente && Date.now() - ultimoInvio > 20000) {
+    ultimoInvio = Date.now();
+    const nome = (utenteCorrente.displayName || utenteCorrente.email || 'Partecipante').substring(0, 30);
+    db.collection('posizioni').doc(utenteCorrente.uid).set({
+      lat, lng, nome,
+      aggiornato: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e => console.error('Invio posizione fallito', e));
+  }
+}
+
+// ---------- Esci ----------
+function esci() {
+  if (utenteCorrente) {
+    db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
+  }
+  auth.signOut();
+}
+
+// ---------- Orologio di gioco ----------
 function avviaAscoltoGioco() {
   if (ascoltaGioco) return;
   ascoltaGioco = true;
@@ -322,24 +321,46 @@ function avviaAscoltoGioco() {
 }
 
 setInterval(() => {
-  if (statoGioco) {
-    document.getElementById('orologioGioco').textContent = formatoGioco(tempoGioco(statoGioco));
-  } else {
-    document.getElementById('orologioGioco').textContent = "00:00:00";
-  }
+  const el = document.getElementById('orologioGioco');
+  el.textContent = statoGioco ? formatoGioco(tempoGioco(statoGioco)) : '00:00:00';
 }, 1000);
 
-function gestisciConsenso() {
-  const attivo = document.getElementById('condividi').checked;
-  if (attivo) {
-    localStorage.setItem('consensoPosizione', 'true');
-  } else {
-    localStorage.removeItem('consensoPosizione');
-    if (utenteCorrente) {
-      db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
-    }
-  }
+// ---------- Orologio reale ----------
+function aggiornaDataReale() {
+  document.getElementById('dataReale').textContent =
+    new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
 }
+aggiornaDataReale();
+
+// ---------- Elenco prove ----------
+const ICONE = { fortuna: '🍀', mondo: '🌍', animali: '🐾' };
+const icona = tipo => ICONE[tipo] || '⭐';
+
+document.getElementById('lista').innerHTML = PROVE.map(p => `
+  <div class="prova">
+    <b>${icona(p.tipo)} ${p.nome}</b><br>
+    <small>🕒 ${p.orario}</small>
+    <p>${p.descrizione}</p>
+  </div>`).join('');
+
+// ---------- Mappa ----------
+const bounds = L.latLngBounds([ZONA.latMin, ZONA.lngMin], [ZONA.latMax, ZONA.lngMax]);
+const mappaLeaflet = L.map('mappa', {
+  minZoom: ZONA.zoom - 1,
+  maxZoom: 18,
+  maxBounds: bounds.pad(0.2),
+  maxBoundsViscosity: 1.0
+}).setView(ZONA.centro, ZONA.zoom);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap'
+}).addTo(mappaLeaflet);
+
+PROVE.forEach(p => {
+  L.marker([p.lat, p.lng]).addTo(mappaLeaflet).bindPopup(
+    `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br>${p.descrizione}`
+  );
+});
 </script>
 </body>
 </html>
