@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="it">
-<script src="gioco.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Evento Prove</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="gioco.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, sans-serif; background: #1b1b2f; color: #f5f5f5; }
@@ -95,6 +95,23 @@ let uid = null;
 firebase.auth().onAuthStateChanged(u => { if (u) uid = u.uid; });
 firebase.auth().signInAnonymously().catch(e => console.error('Login anonimo fallito', e));
 
+// ---------- Orologio di gioco ----------
+// Il listener parte solo dopo il login anonimo, altrimenti le regole lo bloccano
+let statoGioco = null, ascoltaGioco = false;
+firebase.auth().onAuthStateChanged(u => {
+  if (!u || ascoltaGioco) return;
+  ascoltaGioco = true;
+  db.collection('config').doc('evento').onSnapshot(doc => {
+    statoGioco = doc.data() || null;
+  }, err => console.error('Lettura orologio fallita', err));
+});
+
+setInterval(() => {
+  document.getElementById('tempoGioco').textContent = statoGioco
+    ? '🎭 Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco))
+    : '🎭 Ora di gioco: non ancora avviata';
+}, 1000);
+
 // ---------- Mappa limitata a Luvinate ----------
 const bounds = L.latLngBounds([ZONA.latMin, ZONA.lngMin], [ZONA.latMax, ZONA.lngMax]);
 const mappaLeaflet = L.map('mappa', {
@@ -149,53 +166,4 @@ navigator.geolocation.watchPosition(pos => {
 
   // Invia la posizione all'organizzatore solo se il partecipante ha dato il consenso
   if (document.getElementById('condividi').checked && uid && dentro && Date.now() - ultimoInvio > 30000) {
-    ultimoInvio = Date.now();
-    const nome = localStorage.getItem('nomePartecipante') || 'Partecipante';
-    db.collection('posizioni').doc(uid).set({
-      lat, lng,
-      nome: nome.substring(0, 30),
-      aggiornato: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(e => console.error('Invio posizione fallito', e));
-  }
-}, () => {
-  testoPosizione.textContent = 'Attiva la geolocalizzazione per vedere dove sei.';
-}, { enableHighAccuracy: true });
-
-// ---------- Consenso condivisione ----------
-function gestisciConsenso() {
-  const attivo = document.getElementById('condividi').checked;
-  if (attivo && !localStorage.getItem('nomePartecipante')) {
-    const nome = prompt('Come ti chiami? (visibile solo all\'organizzatore)');
-    if (nome) localStorage.setItem('nomePartecipante', nome.trim());
-  }
-  if (!attivo && uid) {
-    db.collection('posizioni').doc(uid).delete().catch(() => {});
-  }
-}
-// ---------- Controllo orologio di gioco ----------
-const refGioco = db.collection('config').doc('evento');
-let statoGioco = null;
-
-refGioco.onSnapshot(doc => {
-  statoGioco = doc.data() || null;
-}, err => console.error(err));
-
-setInterval(() => {
-  if (!statoGioco) return;
-  document.getElementById('statoGioco').textContent =
-    (statoGioco.attivo ? 'In corso' : 'Fermo') +
-    ' · ora di gioco ' + formatoGioco(tempoGioco(statoGioco));
-}, 1000);
-
-function avviaGioco() {
-  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
-}
-function fermaGioco() {
-  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
-}
-function resetGioco() {
-  refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
-}
-</script>
-</body>
-</html>
+    ultimoInvio =
