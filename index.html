@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="gioco.js"></script>
-<style>
+<<style>
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: 'Merriweather', serif; color: #f5f5f5; min-height: 100vh;
@@ -22,30 +22,35 @@
   .schermata.attiva { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; text-align: center; }
   .vista.attiva { display: block; justify-content: flex-start; text-align: left; padding: 0; }
 
-  .card { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-radius: 20px; padding: 24px 20px; max-width: 340px; width: 100%; display: flex; flex-direction: column; gap: 10px; }
-  .card h2 { margin: 0 0 4px; font-size: 1.4rem; }
+  .card { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-radius: 20px; padding: 24px 20px; max-width: 340px; width: 100%; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+  .card h2 { margin: 0 0 4px; font-size: 1.4rem; color: #00ff88; }
   .card p { margin: 0; font-size: 0.9rem; opacity: 0.85; line-height: 1.4; }
 
-  .btn { width: 100%; padding: 14px; font-family: inherit; font-size: 1rem; font-weight: 700; border: none; border-radius: 12px; background: #00ff88; color: #0a0f1d; cursor: pointer; }
+  .btn { width: 100%; padding: 14px; font-family: inherit; font-size: 1.05rem; font-weight: 700; border: none; border-radius: 14px; background: #00ff88; color: #0a0f1d; cursor: pointer; box-shadow: 0 4px 20px rgba(0,255,136,0.3); transition: transform 0.1s ease; }
+  .btn:active { transform: scale(0.97); }
   .btn-bianco { background: #fff; color: #333; }
-  .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; font-size: 0.85rem; }
+  .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; font-size: 0.85rem; box-shadow: none; }
   .btn-link { background: none; border: none; color: #00ff88; text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
 
   .input-auth { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.3); background: #111827; color: #fff; font-family: inherit; font-size: 0.95rem; }
   .errore { color: #ff4d4d; font-size: 0.85rem; min-height: 1em; }
   .divider { font-size: 0.8rem; opacity: 0.6; }
 
-  #orologioGioco { font-size: 3.6rem; font-variant-numeric: tabular-nums; font-weight: 700; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  #orologioGioco { font-size: 3.6rem; font-variant-numeric: tabular-nums; font-weight: 700; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.4); letter-spacing: -1px; margin: 10px 0; }
   #dataReale { opacity: 0.75; text-transform: capitalize; font-size: 0.95rem; }
   #statoUtente { color: #00ff88; font-size: 0.95rem; }
   .menu { width: 80%; max-width: 300px; }
 
-  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; }
-  .barra button { background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer; font-family: inherit; }
+  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: rgba(17,24,39,0.95); border-bottom: 1px solid rgba(0,255,136,0.25); color: #00ff88; }
+  .barra b { font-size: 1.1rem; }
+  .barra button { background: none; border: none; color: #00ff88; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; }
   #mappa { height: 65vh; width: 100%; }
-  #posizioneMappa { padding: 12px 16px; font-size: 0.95rem; line-height: 1.4; }
-  .prova { background: #16213e; margin: 10px 16px; padding: 14px; border-radius: 12px; }
-  .prova small { opacity: 0.7; }
+  #posizioneMappa { padding: 14px 16px; font-size: 0.95rem; line-height: 1.4; background: rgba(17,24,39,0.95); border-top: 1px solid rgba(0,255,136,0.25); }
+  #vistaElenco #lista { padding-bottom: 24px; }
+  .prova { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-left: 4px solid #00ff88; border-radius: 16px; margin: 12px 16px; padding: 16px; text-align: left; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .prova b { font-size: 1.05rem; color: #f5f5f5; }
+  .prova small { display: inline-block; margin-top: 4px; color: #00ff88; opacity: 0.85; }
+  .prova p { margin: 8px 0 0; font-size: 0.9rem; line-height: 1.4; opacity: 0.9; }
   .leaflet-popup-content { font-size: 0.95rem; color: #222; }
 </style>
 </head>
