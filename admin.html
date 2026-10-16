@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="it">
-<script src="gioco.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Area organizzatore</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="gioco.js"></script>
 <style>
   body { margin: 0; font-family: system-ui, sans-serif; }
   #schermataLogin { padding: 20px; max-width: 340px; margin: 40px auto; }
   #schermataLogin input, #schermataLogin button, #esci { width: 100%; padding: 12px; margin: 6px 0; font-size: 1rem; box-sizing: border-box; }
   #schermataAdmin { display: none; }
+  #controlliGioco { padding: 12px; }
+  #controlliGioco button { padding: 10px 14px; margin: 4px 4px 4px 0; font-size: 1rem; }
   #mappaAdmin { height: 60vh; width: 100%; }
   #lista { padding: 12px; font-size: .95rem; }
   #errore { color: #c00; }
@@ -27,13 +29,12 @@
 </div>
 
 <div id="schermataAdmin">
-  <div style="padding:12px;">...</div>
-  <div style="padding:12px;">
-  <p id="statoGioco"></p>
-  <button onclick="avviaGioco()">▶ Avvia (x2)</button>
-  <button onclick="fermaGioco()">⏸ Ferma</button>
-  <button onclick="resetGioco()">⏮ Reset a mezzanotte</button>
-</div>
+  <div id="controlliGioco">
+    <p id="statoGioco">Orologio di gioco non ancora avviato</p>
+    <button onclick="avviaGioco()">▶ Avvia (x2)</button>
+    <button onclick="fermaGioco()">⏸ Ferma</button>
+    <button onclick="resetGioco()">⏮ Reset a mezzanotte</button>
+  </div>
   <div id="mappaAdmin"></div>
   <div id="lista"></div>
   <button id="esci" onclick="esci()">Esci</button>
@@ -44,12 +45,47 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
+<script src="prove.js"></script>
 <script>
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
-let mappaAdmin = null, gruppo = null, unsub = null;
+let mappaAdmin = null, gruppo = null, unsub = null, unsubGioco = null;
 
+// ---------- Orologio di gioco ----------
+const refGioco = db.collection('config').doc('evento');
+let statoGioco = null;
+
+function avviaOrologioGioco() {
+  if (unsubGioco) return;
+  unsubGioco = refGioco.onSnapshot(doc => {
+    statoGioco = doc.data() || null;
+  }, err => console.error('Lettura orologio fallita', err));
+}
+
+function fermaOrologioGioco() {
+  if (unsubGioco) { unsubGioco(); unsubGioco = null; }
+  statoGioco = null;
+}
+
+setInterval(() => {
+  if (!statoGioco) return;
+  document.getElementById('statoGioco').textContent =
+    (statoGioco.attivo ? 'In corso' : 'Fermo') +
+    ' · ora di gioco ' + formatoGioco(tempoGioco(statoGioco));
+}, 1000);
+
+function avviaGioco() {
+  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+}
+function fermaGioco() {
+  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+}
+function resetGioco() {
+  refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
+}
+
+// ---------- Login e area admin ----------
 function accedi() {
   auth.signInWithEmailAndPassword(
     document.getElementById('email').value,
@@ -66,10 +102,12 @@ auth.onAuthStateChanged(u => {
     document.getElementById('schermataLogin').style.display = 'none';
     document.getElementById('schermataAdmin').style.display = 'block';
     avvia();
+    avviaOrologioGioco();
   } else {
     document.getElementById('schermataLogin').style.display = 'block';
     document.getElementById('schermataAdmin').style.display = 'none';
     if (unsub) { unsub(); unsub = null; }
+    fermaOrologioGioco();
   }
 });
 
@@ -83,6 +121,7 @@ function avvia() {
     gruppo = L.layerGroup().addTo(mappaAdmin);
   }
 
+  if (unsub) return;
   unsub = db.collection('posizioni').onSnapshot(snap => {
     gruppo.clearLayers();
     let html = '';
