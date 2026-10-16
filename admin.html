@@ -3,41 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Area organizzatore</title>
+<title>Area Organizzatore - Admin</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="gioco.js"></script>
 <style>
-  body { margin: 0; font-family: system-ui, sans-serif; }
-  #schermataLogin { padding: 20px; max-width: 340px; margin: 40px auto; }
-  #schermataLogin input, #schermataLogin button, #esci { width: 100%; padding: 12px; margin: 6px 0; font-size: 1rem; box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0a0f1d; color: #fff; }
+  #schermataLogin { padding: 40px 20px; max-width: 360px; margin: 60px auto; text-align: center; background: #111827; border-radius: 12px; }
+  #schermataLogin button, #esci { width: 100%; padding: 14px; margin: 10px 0; font-size: 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+  .btn-google { background: #fff; color: #333; }
   #schermataAdmin { display: none; }
-  #controlliGioco { padding: 12px; }
-  #controlliGioco button { padding: 10px 14px; margin: 4px 4px 4px 0; font-size: 1rem; }
-  #mappaAdmin { height: 60vh; width: 100%; }
-  #lista { padding: 12px; font-size: .95rem; }
-  #errore { color: #c00; }
+  #controlliGioco { padding: 16px; background: #111827; border-bottom: 1px solid rgba(0,255,136,0.2); }
+  #controlliGioco button { padding: 10px 14px; margin: 4px 4px 4px 0; font-size: 0.95rem; background: #00ff88; color: #0a0f1d; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+  #mappaAdmin { height: 50vh; width: 100%; }
+  #listaUtenti { padding: 16px; background: #111827; margin-top: 10px; max-height: 30vh; overflow-y: auto; }
+  .utente-card { background: #1f2937; padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #00ff88; font-size: 0.9rem; }
+  #errore { color: #ff4d4d; margin-top: 10px; }
+  #esci { background: #ff4d4d; color: #fff; margin: 16px; width: calc(100% - 32px); }
 </style>
 </head>
 <body>
 
 <div id="schermataLogin">
-  <h2>Area organizzatore</h2>
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="accedi()">Accedi</button>
+  <h2>Area Organizzatore</h2>
+  <p style="font-size: 0.9rem; opacity: 0.8;">Accedi con l'account Google autorizzato</p>
+  <button class="btn-google" onclick="accediAdmin()">🔵 Accedi con Google</button>
   <p id="errore"></p>
 </div>
 
 <div id="schermataAdmin">
   <div id="controlliGioco">
-    <p id="statoGioco">Orologio di gioco non ancora avviato</p>
-    <button onclick="avviaGioco()">▶ Avvia (x2)</button>
+    <p id="statoGioco" style="font-weight: bold; color: #00ff88;">Orologio di gioco non avviato</p>
+    <button onclick="avviaGioco()">▶ Avvia (x2 da 17:45 = 00:00)</button>
     <button onclick="fermaGioco()">⏸ Ferma</button>
     <button onclick="resetGioco()">⏮ Reset a mezzanotte</button>
   </div>
+  
   <div id="mappaAdmin"></div>
-  <div id="lista"></div>
-  <button id="esci" onclick="esci()">Esci</button>
+  
+  <div id="listaUtenti">
+    <h3>👥 Partecipanti Online & Posizioni</h3>
+    <div id="contenutoLista">Nessun partecipante online al momento.</div>
+  </div>
+
+  <button id="esci" onclick="esci()">Esci dall'Area Admin</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -52,10 +60,37 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 let mappaAdmin = null, gruppo = null, unsub = null, unsubGioco = null;
 
-// ---------- Orologio di gioco ----------
 const refGioco = db.collection('config').doc('evento');
 let statoGioco = null;
 
+function accediAdmin() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(() => {
+    document.getElementById('errore').textContent = 'Accesso Google non riuscito.';
+  });
+}
+
+function esci() { auth.signOut(); }
+
+auth.onAuthStateChanged(u => {
+  if (u && u.email === ADMIN_EMAIL) {
+    document.getElementById('schermataLogin').style.display = 'none';
+    document.getElementById('schermataAdmin').style.display = 'block';
+    avviaMappaAdmin();
+    avviaOrologioGioco();
+  } else {
+    if (u) {
+      document.getElementById('errore').textContent = 'Account non autorizzato come amministratore.';
+      auth.signOut();
+    }
+    document.getElementById('schermataLogin').style.display = 'block';
+    document.getElementById('schermataAdmin').style.display = 'none';
+    if (unsub) { unsub(); unsub = null; }
+    fermaOrologioGioco();
+  }
+});
+
+// ---------- Controlli Orologio di Gioco ----------
 function avviaOrologioGioco() {
   if (unsubGioco) return;
   unsubGioco = refGioco.onSnapshot(doc => {
@@ -71,47 +106,24 @@ function fermaOrologioGioco() {
 setInterval(() => {
   if (!statoGioco) return;
   document.getElementById('statoGioco').textContent =
-    (statoGioco.attivo ? 'In corso' : 'Fermo') +
-    ' · ora di gioco ' + formatoGioco(tempoGioco(statoGioco));
+    (statoGioco.attivo ? '🟢 In corso (x2)' : '⏸ Fermo') +
+    ' · Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco));
 }, 1000);
 
 function avviaGioco() {
-  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+  refGioco.set({ attivo: true, gioco0: 0, reale0: Date.now() });
 }
 function fermaGioco() {
-  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+  if (!statoGioco) return;
+  const tCorrente = tempoGioco(statoGioco);
+  refGioco.set({ attivo: false, gioco0: tCorrente, reale0: Date.now() });
 }
 function resetGioco() {
   refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
 }
 
-// ---------- Login e area admin ----------
-function accedi() {
-  auth.signInWithEmailAndPassword(
-    document.getElementById('email').value,
-    document.getElementById('password').value
-  ).catch(() => {
-    document.getElementById('errore').textContent = 'Accesso negato.';
-  });
-}
-
-function esci() { auth.signOut(); }
-
-auth.onAuthStateChanged(u => {
-  if (u && u.email === ADMIN_EMAIL) {
-    document.getElementById('schermataLogin').style.display = 'none';
-    document.getElementById('schermataAdmin').style.display = 'block';
-    avvia();
-    avviaOrologioGioco();
-  } else {
-    document.getElementById('schermataLogin').style.display = 'block';
-    document.getElementById('schermataAdmin').style.display = 'none';
-    if (unsub) { unsub(); unsub = null; }
-    fermaOrologioGioco();
-  }
-});
-
-function avvia() {
+// ---------- Mappa e Lista Utenti in Tempo Reale ----------
+function avviaMappaAdmin() {
   if (!mappaAdmin) {
     mappaAdmin = L.map('mappaAdmin').setView(ZONA.centro, ZONA.zoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -125,16 +137,31 @@ function avvia() {
   unsub = db.collection('posizioni').onSnapshot(snap => {
     gruppo.clearLayers();
     let html = '';
+    
+    if (snap.empty) {
+      document.getElementById('contenutoLista').innerHTML = 'Nessun partecipante online al momento.';
+      return;
+    }
+
     snap.forEach(doc => {
       const d = doc.data();
       const ora = d.aggiornato && d.aggiornato.toDate
         ? d.aggiornato.toDate().toLocaleTimeString('it-IT') : '—';
-      L.circleMarker([d.lat, d.lng], { radius: 8, color: '#fff', fillColor: '#e94560', fillOpacity: 1 })
-        .bindPopup(`<b>${d.nome}</b><br>${ora}`)
+      
+      // Aggiungi marker sulla mappa admin
+      L.circleMarker([d.lat, d.lng], { radius: 9, color: '#0a0f1d', fillColor: '#00ff88', fillOpacity: 1 })
+        .bindPopup(`<b>${d.nome}</b><br>Aggiornato: ${ora}`)
         .addTo(gruppo);
-      html += `<p><b>${d.nome}</b> — ultimo aggiornamento ${ora}</p>`;
+
+      // Card testuale per la lista degli utenti online
+      html += `
+        <div class="utente-card">
+          <b>👤 ${d.nome}</b><br>
+          📍 Lat: ${d.lat.toFixed(4)}, Lng: ${d.lng.toFixed(4)}<br>
+          🕒 Ultimo aggiornamento: ${ora}
+        </div>`;
     });
-    document.getElementById('lista').innerHTML = html || 'Nessuna posizione condivisa al momento.';
+    document.getElementById('contenutoLista').innerHTML = html;
   }, err => console.error(err));
 }
 </script>
