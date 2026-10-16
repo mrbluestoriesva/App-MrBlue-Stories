@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Area organizzatore</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; }
+  #schermataLogin { padding: 20px; max-width: 340px; margin: 40px auto; }
+  #schermataLogin input, #schermataLogin button, #esci { width: 100%; padding: 12px; margin: 6px 0; font-size: 1rem; box-sizing: border-box; }
+  #schermataAdmin { display: none; }
+  #mappaAdmin { height: 60vh; width: 100%; }
+  #lista { padding: 12px; font-size: .95rem; }
+  #errore { color: #c00; }
+</style>
+</head>
+<body>
+
+<div id="schermataLogin">
+  <h2>Area organizzatore</h2>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="accedi()">Accedi</button>
+  <p id="errore"></p>
+</div>
+
+<div id="schermataAdmin">
+  <div id="mappaAdmin"></div>
+  <div id="lista"></div>
+  <button id="esci" onclick="esci()">Esci</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let mappaAdmin = null, gruppo = null, unsub = null;
+
+function accedi() {
+  auth.signInWithEmailAndPassword(
+    document.getElementById('email').value,
+    document.getElementById('password').value
+  ).catch(() => {
+    document.getElementById('errore').textContent = 'Accesso negato.';
+  });
+}
+
+function esci() { auth.signOut(); }
+
+auth.onAuthStateChanged(u => {
+  if (u && u.email === ADMIN_EMAIL) {
+    document.getElementById('schermataLogin').style.display = 'none';
+    document.getElementById('schermataAdmin').style.display = 'block';
+    avvia();
+  } else {
+    document.getElementById('schermataLogin').style.display = 'block';
+    document.getElementById('schermataAdmin').style.display = 'none';
+    if (unsub) { unsub(); unsub = null; }
+  }
+});
+
+function avvia() {
+  if (!mappaAdmin) {
+    mappaAdmin = L.map('mappaAdmin').setView(ZONA.centro, ZONA.zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(mappaAdmin);
+    PROVE.forEach(p => L.marker([p.lat, p.lng]).addTo(mappaAdmin).bindPopup(p.nome));
+    gruppo = L.layerGroup().addTo(mappaAdmin);
+  }
+
+  unsub = db.collection('posizioni').onSnapshot(snap => {
+    gruppo.clearLayers();
+    let html = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const ora = d.aggiornato && d.aggiornato.toDate
+        ? d.aggiornato.toDate().toLocaleTimeString('it-IT') : '—';
+      L.circleMarker([d.lat, d.lng], { radius: 8, color: '#fff', fillColor: '#e94560', fillOpacity: 1 })
+        .bindPopup(`<b>${d.nome}</b><br>${ora}`)
+        .addTo(gruppo);
+      html += `<p><b>${d.nome}</b> — ultimo aggiornamento ${ora}</p>`;
+    });
+    document.getElementById('lista').innerHTML = html || 'Nessuna posizione condivisa al momento.';
+  }, err => console.error(err));
+}
+</script>
+</body>
+</html>
