@@ -62,6 +62,7 @@
     transition: transform 0.1s ease;
   }
   .menu:active { transform: scale(0.97); }
+  
   .btn-google {
     background: #fff;
     color: #333;
@@ -69,7 +70,37 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    padding: 12px;
   }
+  
+  .input-auth {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    background: #111827;
+    color: #fff;
+    font-family: 'Merriweather', serif;
+    font-size: 0.95rem;
+  }
+
+  .btn-email {
+    background: #00ff88;
+    color: #0a0f1d;
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Merriweather', serif;
+  }
+
   .consenso { 
     font-size: 0.9rem; 
     opacity: .85; 
@@ -92,14 +123,34 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    background: rgba(17, 24, 39, 0.7);
-    padding: 30px 20px;
+    gap: 10px;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 24px 20px;
     border-radius: 20px;
-    border: 1px solid rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.3);
     max-width: 340px;
     width: 100%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+  .divider {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin: 6px 0;
+  }
+  .toggle-auth {
+    font-size: 0.85rem;
+    color: #00ff88;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+    text-decoration: underline;
+  }
+  #erroreLogin {
+    color: #ff4d4d;
+    font-size: 0.85rem;
+    margin-top: 5px;
   }
 </style>
 </head>
@@ -107,14 +158,27 @@
 
 <div id="home">
   
-  <!-- SCHERMATA DI LOGIN OBBLIGATORIO -->
+  <!-- SCHERMATA DI LOGIN OBBLIGATORIO (Google + Email/Password) -->
   <div id="sezioneLogin">
-    <h2 style="margin: 0 0 10px 0; font-size: 1.4rem;">Evento Prove</h2>
-    <p style="font-size: 0.9rem; opacity: 0.8; margin: 0 0 15px 0;">Accedi con Google per entrare nel gioco</p>
+    <h2 style="margin: 0 0 5px 0; font-size: 1.4rem;">Evento Prove</h2>
+    <p style="font-size: 0.85rem; opacity: 0.8; margin: 0 0 15px 0;">Accedi per partecipare al gioco</p>
+    
+    <!-- Pulsante Google -->
     <button class="menu btn-google" onclick="accediGoogle()">🔵 Accedi con Google</button>
+    
+    <div class="divider">oppure usa l'email</div>
+    
+    <!-- Form Email / Password -->
+    <input type="email" id="emailInput" class="input-auth" placeholder="Email">
+    <input type="password" id="passwordInput" class="input-auth" placeholder="Password">
+    <button class="btn-email" id="btnEmailAction" onclick="gestisciEmailPassword()">Accedi</button>
+    
+    <p id="erroreLogin"></p>
+
+    <button class="toggle-auth" onclick="cambiaModalitaAuth()">Non hai un account? Registrati</button>
   </div>
 
-  <!-- CONTENUTO PRINCIPALE DEL GIOCO -->
+  <!-- CONTENUTO PRINCIPALE DEL GIOCO (Visibile dopo il login) -->
   <div id="contenutoProtetto">
     <div id="statoUtente"></div>
     
@@ -131,6 +195,8 @@
       <input type="checkbox" id="condividi" onchange="gestisciConsenso()">
       Condividi la mia posizione con l'organizzatore
     </label>
+
+    <button onclick="auth.signOut()" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-family:'Merriweather',serif; font-size:0.85rem; margin-top:10px;">Esci dall'account</button>
   </div>
 
 </div>
@@ -145,23 +211,57 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 let utenteCorrente = null;
 let statoGioco = null;
+let modalitaRegistrazione = false;
 
-// Gestione del ritorno dal reindirizzamento di Google
-auth.getRedirectResult().catch(e => console.error("Errore redirect Google:", e));
-
-// Login con Reindirizzamento (perfetto per mobile)
+// 1. Accesso con Google (usando popup con fallback sicuro)
 function accediGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider)
-    .then(() => {
-      console.log("Reindirizzamento a Google avviato...");
-    })
-    .catch(error => {
-      console.error("Errore critico Google Sign-In:", error.code, error.message);
-      alert("Errore di accesso: " + error.message);
-    });
+  auth.signInWithPopup(provider).catch(e => {
+    console.error("Popup bloccato, provo con redirect:", e);
+    auth.signInWithRedirect(provider);
+  });
 }
 
+// 2. Accesso / Registrazione con Email e Password
+function gestisciEmailPassword() {
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value.trim();
+  const errBox = document.getElementById('erroreLogin');
+  errBox.textContent = '';
+
+  if (!email || !password) {
+    errBox.textContent = 'Inserisci email e password.';
+    return;
+  }
+
+  if (modalitaRegistrazione) {
+    auth.createUserWithEmailAndPassword(email, password).catch(e => {
+      errBox.textContent = 'Errore registrazione: ' + e.message;
+    });
+  } else {
+    auth.signInWithEmailAndPassword(email, password).catch(e => {
+      errBox.textContent = 'Credenziali non valide.';
+    });
+  }
+}
+
+// Cambia testo tra Login e Registrazione
+function cambiaModalitaAuth() {
+  modalitaRegistrazione = !modalitaRegistrazione;
+  const btn = document.getElementById('btnEmailAction');
+  const toggle = document.querySelector('.toggle-auth');
+  document.getElementById('erroreLogin').textContent = '';
+
+  if (modalitaRegistrazione) {
+    btn.textContent = 'Registrati';
+    toggle.textContent = 'Hai già un account? Accedi';
+  } else {
+    btn.textContent = 'Accedi';
+    toggle.textContent = "Non hai un account? Registrati";
+  }
+}
+
+// Stato di autenticazione unificato
 auth.onAuthStateChanged(u => {
   utenteCorrente = u;
   const sezioneLogin = document.getElementById('sezioneLogin');
@@ -171,8 +271,9 @@ auth.onAuthStateChanged(u => {
   if (u) {
     sezioneLogin.style.display = 'none';
     contenutoProtetto.style.display = 'flex';
-    statoUtente.textContent = `👤 Benvenuto, ${u.displayName || u.email}`;
-    localStorage.setItem('nomePartecipante', u.displayName || u.email);
+    const nomeVisualizzato = u.displayName || u.email;
+    statoUtente.textContent = `👤 Benvenuto, ${nomeVisualizzato}`;
+    localStorage.setItem('nomePartecipante', nomeVisualizzato);
     
     if (localStorage.getItem('consensoPosizione') === 'true') {
       document.getElementById('condividi').checked = true;
@@ -184,6 +285,7 @@ auth.onAuthStateChanged(u => {
   }
 });
 
+// Orologio reale e di gioco
 function aggiornaDataReale() {
   const o = new Date();
   document.getElementById('dataReale').textContent =
