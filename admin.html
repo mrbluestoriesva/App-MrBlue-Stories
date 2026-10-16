@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+<script src="gioco.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,6 +27,13 @@
 </div>
 
 <div id="schermataAdmin">
+  <div style="padding:12px;">...</div>
+  <div style="padding:12px;">
+  <p id="statoGioco"></p>
+  <button onclick="avviaGioco()">▶ Avvia (x2)</button>
+  <button onclick="fermaGioco()">⏸ Ferma</button>
+  <button onclick="resetGioco()">⏮ Reset a mezzanotte</button>
+</div>
   <div id="mappaAdmin"></div>
   <div id="lista"></div>
   <button id="esci" onclick="esci()">Esci</button>
