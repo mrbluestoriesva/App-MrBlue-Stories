@@ -161,7 +161,7 @@ auth.getRedirectResult().catch(e => {
 // ---------- Login email/password ----------
 function gestisciEmailPassword() {
   const email = document.getElementById('emailInput').value.trim();
-  const password = document.getElementById('passwordInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
   const errBox = document.getElementById('erroreLogin');
   errBox.textContent = '';
 
@@ -169,15 +169,24 @@ function gestisciEmailPassword() {
     errBox.textContent = 'Inserisci email e password.';
     return;
   }
-  if (modalitaRegistrazione) {
-    auth.createUserWithEmailAndPassword(email, password).catch(e => {
-      errBox.textContent = 'Errore registrazione: ' + e.message;
-    });
-  } else {
-    auth.signInWithEmailAndPassword(email, password).catch(() => {
-      errBox.textContent = 'Credenziali non valide.';
-    });
-  }
+
+  const operazione = modalitaRegistrazione
+    ? auth.createUserWithEmailAndPassword(email, password)
+    : auth.signInWithEmailAndPassword(email, password);
+
+  operazione.catch(e => {
+    const messaggi = {
+      'auth/operation-not-allowed': 'Email/password non è attiva in Firebase (Authentication → Metodo di accesso).',
+      'auth/user-not-found': 'Account non trovato. Usa "Non hai un account? Registrati".',
+      'auth/wrong-password': 'Password errata.',
+      'auth/invalid-credential': 'Email o password non corrette. Se hai cancellato l\'account, registrati di nuovo.',
+      'auth/email-already-in-use': 'Email già registrata. Usa "Hai già un account? Accedi".',
+      'auth/weak-password': 'Password troppo corta: usa almeno 6 caratteri.',
+      'auth/invalid-email': 'Email non valida.',
+      'auth/too-many-requests': 'Troppi tentativi. Aspetta qualche minuto.'
+    };
+    errBox.textContent = messaggi[e.code] || ('Errore: ' + e.code);
+  });
 }
 
 function cambiaModalitaAuth() {
