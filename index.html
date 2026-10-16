@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+<script src="gioco.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -30,6 +31,7 @@
 <div id="home" class="screen attivo">
   <div id="orologio">--:--:--</div>
   <div id="data"></div>
+  <div id="tempoGioco" style="font-size:1.4rem; opacity:.9;"></div>
   <button class="menu" onclick="vai('mappa')">🗺️ Mappa</button>
   <button class="menu" onclick="vai('elenco')">📋 Elenco prove</button>
   <label class="consenso">
@@ -169,6 +171,30 @@ function gestisciConsenso() {
   if (!attivo && uid) {
     db.collection('posizioni').doc(uid).delete().catch(() => {});
   }
+}
+// ---------- Controllo orologio di gioco ----------
+const refGioco = db.collection('config').doc('evento');
+let statoGioco = null;
+
+refGioco.onSnapshot(doc => {
+  statoGioco = doc.data() || null;
+}, err => console.error(err));
+
+setInterval(() => {
+  if (!statoGioco) return;
+  document.getElementById('statoGioco').textContent =
+    (statoGioco.attivo ? 'In corso' : 'Fermo') +
+    ' · ora di gioco ' + formatoGioco(tempoGioco(statoGioco));
+}, 1000);
+
+function avviaGioco() {
+  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+}
+function fermaGioco() {
+  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+}
+function resetGioco() {
+  refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
 }
 </script>
 </body>
