@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1d">
+<title>Elenco Prove - Evento Prove</title>
+<!-- Import del font Merriweather -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { 
+    margin: 0; 
+    font-family: 'Merriweather', serif; 
+    background: #0a0f1d; 
+    color: #f5f5f5; 
+  }
+  .barra { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 14px 18px; 
+    background: #111827; 
+    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .indietro { 
+    background: none; 
+    border: none; 
+    color: #00ff88; 
+    font-family: 'Merriweather', serif;
+    font-size: 1rem; 
+    font-weight: 700;
+    cursor: pointer; 
+  }
+  .barra b {
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+  }
+  #lista {
+    padding: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .prova { 
+    background: #111827; 
+    margin-bottom: 14px; 
+    padding: 18px; 
+    border-radius: 14px; 
+    border: 1px solid rgba(0, 255, 136, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .prova b {
+    font-size: 1.1rem;
+    color: #00ff88;
+  }
+  .prova small { 
+    display: inline-block;
+    margin-top: 6px;
+    opacity: 0.8; 
+    font-size: 0.85rem;
+  }
+  .prova p {
+    margin: 10px 0 0 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <button class="indietro" onclick="window.location.href='index.html'">← Indietro</button>
+  <b>Elenco Prove</b>
+  <span></span>
+</div>
+
+<div id="lista"></div>
+
+<script src="prove.js"></script>
+<script>
+const ICONE = { fortuna: '🍀', mondo: '🌍', animali: '🐾' };
+const icona = tipo => ICONE[tipo] || '⭐';
+
+document.getElementById('lista').innerHTML = PROVE.map(p => `
+  <div class="prova">
+    <b>${icona(p.tipo)} ${p.nome}</b><br>
+    <small>🕒 Orario previsto: ${p.orario}</small>
+    <p>${p.descrizione}</p>
+  </div>`).join('');
+</script>
+</body>
+</html>
