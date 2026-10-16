@@ -166,4 +166,29 @@ navigator.geolocation.watchPosition(pos => {
 
   // Invia la posizione all'organizzatore solo se il partecipante ha dato il consenso
   if (document.getElementById('condividi').checked && uid && dentro && Date.now() - ultimoInvio > 30000) {
-    ultimoInvio =
+    ultimoInvio = Date.now();
+    const nome = localStorage.getItem('nomePartecipante') || 'Partecipante';
+    db.collection('posizioni').doc(uid).set({
+      lat, lng,
+      nome: nome.substring(0, 30),
+      aggiornato: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e => console.error('Invio posizione fallito', e));
+  }
+}, () => {
+  testoPosizione.textContent = 'Attiva la geolocalizzazione per vedere dove sei.';
+}, { enableHighAccuracy: true });
+
+// ---------- Consenso condivisione ----------
+function gestisciConsenso() {
+  const attivo = document.getElementById('condividi').checked;
+  if (attivo && !localStorage.getItem('nomePartecipante')) {
+    const nome = prompt('Come ti chiami? (visibile solo all\'organizzatore)');
+    if (nome) localStorage.setItem('nomePartecipante', nome.trim());
+  }
+  if (!attivo && uid) {
+    db.collection('posizioni').doc(uid).delete().catch(() => {});
+  }
+}
+</script>
+</body>
+</html>
