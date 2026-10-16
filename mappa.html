@@ -6,31 +6,142 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1d">
-<title>Mappa - Evento Prove</title>
+<title>Navigatore Mappa - Evento Prove</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<!-- Import del font Merriweather -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Merriweather', serif; background: #0a0f1d; color: #f5f5f5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: #111827; border-bottom: 1px solid rgba(0, 255, 136, 0.2); }
-  .indietro { background: none; border: none; color: #00ff88; font-family: 'Merriweather', serif; font-size: 1rem; font-weight: 700; cursor: pointer; }
-  .barra b { font-size: 1.1rem; }
-  #mappa { flex-grow: 1; width: 100%; }
-  #posizione { padding: 14px 18px; font-size: 0.9rem; line-height: 1.4; background: #111827; border-top: 1px solid rgba(0, 255, 136, 0.2); text-align: center; }
+  body { 
+    margin: 0; 
+    font-family: 'Merriweather', serif; 
+    background: #0a0f1d; 
+    color: #f5f5f5; 
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Mappa a schermo intero */
+  #mappa { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* Stile HUD / Pannelli Fluttuanti stile Waze/Maps */
+  .hud-top {
+    position: relative;
+    z-index: 10;
+    margin: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none; /* Lascia passare i tocchi dove non ci sono box */
+  }
+
+  .hud-card {
+    background: rgba(10, 15, 29, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 16px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .btn-indietro {
+    background: rgba(0, 255, 136, 0.15);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    font-family: 'Merriweather', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-indietro:active {
+    background: #00ff88;
+    color: #0a0f1d;
+  }
+
+  .hud-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #00ff88;
+    letter-spacing: 0.5px;
+  }
+
+  /* Pannello inferiore stile navigatore */
+  .hud-bottom {
+    position: absolute;
+    bottom: 20px;
+    left: 12px;
+    right: 12px;
+    z-index: 10;
+    background: rgba(10, 15, 29, 0.9);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    text-align: center;
+  }
+
+  #posizione {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #f5f5f5;
+  }
+  #posizione b {
+    color: #00ff88;
+  }
+
+  /* Popup di Leaflet personalizzato scuro/neon */
+  .leaflet-popup-content-wrapper {
+    background: #0a0f1d !important;
+    color: #f5f5f5 !important;
+    border: 1px solid #00ff88 !important;
+    border-radius: 12px !important;
+    font-family: 'Merriweather', serif !important;
+    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3) !important;
+  }
+  .leaflet-popup-tip {
+    background: #00ff88 !important;
+  }
 </style>
 </head>
 <body>
 
-<div class="barra">
-  <button class="indietro" onclick="window.location.href='index.html'">← Indietro</button>
-  <b>Mappa dell'Evento</b>
-  <span></span>
+<!-- Barra Superiore HUD (stile navigatore) -->
+<div class="hud-top">
+  <div class="hud-card">
+    <button class="btn-indietro" onclick="window.location.href='index.html'">← Indietro</button>
+    <div class="hud-title">🧭 Navigatore Evento</div>
+    <div style="width: 70px;"></div> <!-- Spaziatore bilanciato -->
+  </div>
 </div>
 
+<!-- Mappa Leaflet a tutto schermo -->
 <div id="mappa"></div>
-<div id="posizione">📍 Attiva la geolocalizzazione per vedere dove sei.</div>
+
+<!-- Pannello Inferiore HUD (Indicazioni in tempo reale) -->
+<div class="hud-bottom">
+  <div id="posizione">📍 Attivazione GPS in corso...</div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -46,23 +157,31 @@ let utenteCorrente = null;
 
 auth.onAuthStateChanged(u => { utenteCorrente = u; });
 
-// Mappa Leaflet
+// Inizializzazione Mappa stile scuro / cyberpunk
 const ICONE = { fortuna: '🍀', mondo: '🌍', animali: '🐾' };
 const icona = tipo => ICONE[tipo] || '⭐';
 
 const bounds = L.latLngBounds([ZONA.latMin, ZONA.lngMin], [ZONA.latMax, ZONA.lngMax]);
 const mappaLeaflet = L.map('mappa', {
-  minZoom: ZONA.zoom - 1, maxZoom: 18,
-  maxBounds: bounds.pad(0.2), maxBoundsViscosity: 1.0
+  zoomControl: false, // Pulito, senza controlli zoom standard invadenti
+  minZoom: ZONA.zoom - 1, 
+  maxZoom: 18,
+  maxBounds: bounds.pad(0.2), 
+  maxBoundsViscosity: 1.0
 }).setView(ZONA.centro, ZONA.zoom);
 
+// Spostiamo i controlli dello zoom in basso a destra per comodità d'uso da cellulare
+L.control.zoom({ position: 'bottomright' }).addTo(mappaLeaflet);
+
+// Tile layer scuro di OpenStreetMap (o standard pulito)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(mappaLeaflet);
 
+// Aggiunta marker delle prove con stile
 PROVE.forEach(p => {
   L.marker([p.lat, p.lng]).addTo(mappaLeaflet).bindPopup(
-    `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br>${p.descrizione}`
+    `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br><span style="opacity:0.8; font-size:0.85rem;">${p.descrizione}</span>`
   );
 });
 
@@ -73,16 +192,29 @@ function distanza(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-let markerMio = null, ultimoInvio = 0;
+let markerMio = null, ultimoInvio = 0, primoCentramento = true;
 const testoPosizione = document.getElementById('posizione');
 
 navigator.geolocation.watchPosition(pos => {
   const { latitude: lat, longitude: lng } = pos.coords;
 
   if (!markerMio) {
-    markerMio = L.circleMarker([lat, lng], { radius: 9, color: '#0a0f1d', fillColor: '#00ff88', fillOpacity: 1 }).addTo(mappaLeaflet);
+    // Marker stile radar GPS luminoso
+    markerMio = L.circleMarker([lat, lng], { 
+      radius: 10, 
+      color: '#ffffff', 
+      weight: 2,
+      fillColor: '#00ff88', 
+      fillOpacity: 1 
+    }).addTo(mappaLeaflet);
   } else {
     markerMio.setLatLng([lat, lng]);
+  }
+
+  // Centra la mappa sulla posizione dell'utente la prima volta che la rileva
+  if (primoCentramento) {
+    mappaLeaflet.setView([lat, lng], 16);
+    primoCentramento = false;
   }
 
   const dentro = lat >= ZONA.latMin && lat <= ZONA.latMax && lng >= ZONA.lngMin && lng <= ZONA.lngMax;
@@ -92,13 +224,13 @@ navigator.geolocation.watchPosition(pos => {
       const d = distanza(lat, lng, p.lat, p.lng);
       if (d < min) { min = d; vicina = p; }
     });
-    testoPosizione.innerHTML = `📍 Ti trovi a Luvinate. Prova più vicina: <b>${vicina.nome}</b> (${Math.round(min)} m)`;
+    testoPosizione.innerHTML = `📍 Prova più vicina: <b>${vicina.nome}</b><br><span style="color:#00ff88; font-weight:700;">A ${Math.round(min)} metri da te</span>`;
   } else {
     testoPosizione.textContent = "📍 Sei fuori dalla zona dell'evento.";
   }
 
-  // Invia posizione se loggato e consenso attivo
-  const condividiAttivo = localStorage.getItem('nomePartecipante');
+  // Invio posizione all'organizzatore se attivo
+  const condividiAttivo = localStorage.getItem('consensoPosizione');
   if (condividiAttivo && utenteCorrente && dentro && Date.now() - ultimoInvio > 30000) {
     ultimoInvio = Date.now();
     db.collection('posizioni').doc(utenteCorrente.uid).set({
@@ -108,7 +240,7 @@ navigator.geolocation.watchPosition(pos => {
     }).catch(e => console.error('Invio posizione fallito', e));
   }
 }, () => {
-  testoPosizione.textContent = 'Attiva la geolocalizzazione per vedere dove sei.';
+  testoPosizione.textContent = '⚠️ Attiva la geolocalizzazione sul telefono per navigare.';
 }, { enableHighAccuracy: true });
 </script>
 </body>
