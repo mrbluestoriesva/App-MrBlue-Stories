@@ -233,16 +233,15 @@ function controllaPermessoPosizione() {
 // ---------- Posizione obbligatoria ----------
 function richiediPosizione() {
   const err = document.getElementById('errorePosizione');
-  err.textContent = '';
+  err.textContent = 'Richiesta in corso...';
   if (!navigator.geolocation) {
-    err.textContent = 'Il browser non supporta la geolocalizzazione.';
+    err.textContent = 'Questo browser non supporta la geolocalizzazione.';
     return;
   }
   navigator.geolocation.getCurrentPosition(
-    () => avviaPosizione(),
+    () => { err.textContent = ''; avviaPosizione(); },
     e => {
-      if (e.code === 1) { rifiutaPosizione(); return; }
-      err.textContent = "Impossibile ottenere la posizione. Riprova all'aperto o con il GPS attivo.";
+      err.textContent = `Errore posizione (codice ${e.code}): ${e.message}`;
     },
     { enableHighAccuracy: true, timeout: 15000 }
   );
