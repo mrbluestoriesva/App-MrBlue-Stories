@@ -11,13 +11,15 @@
   body { margin: 0; font-family: system-ui, sans-serif; background: #0a0f1d; color: #f5f5f5; }
   .schermata { display: none; }
   .schermata.attiva { display: block; }
-  #schermataLogin { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #schermataLogin.attiva { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 20px; }
+
   .card { background: rgba(17,24,39,0.95); border: 1px solid rgba(0,255,136,0.3); border-radius: 16px; padding: 24px 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; }
   .card h2 { margin: 0 0 4px; color: #00ff88; }
   .input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.3); background: #0a0f1d; color: #fff; font-size: 1rem; }
   .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; background: #00ff88; color: #0a0f1d; font-weight: 700; font-size: 1rem; cursor: pointer; }
   .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; }
   .errore { color: #ff4d4d; font-size: 0.9rem; min-height: 1em; margin: 0; }
+
   #controlli { padding: 16px; background: #111827; border-bottom: 1px solid rgba(0,255,136,0.2); }
   #statoGioco { font-weight: bold; color: #00ff88; margin: 0 0 10px; }
   #controlli button { padding: 10px 14px; margin: 4px 4px 4px 0; font-size: 0.95rem; background: #00ff88; color: #0a0f1d; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -113,7 +115,7 @@ auth.onAuthStateChanged(u => {
   }
 
   if (u) {
-    // Account che non è l'admin: lo disconnette e mostra il messaggio
+    // Account diverso dall'admin: lo disconnette e mostra il messaggio
     document.getElementById('errore').textContent = 'Account non autorizzato come organizzatore.';
     auth.signOut();
     return;
