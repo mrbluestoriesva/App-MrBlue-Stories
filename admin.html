@@ -2,105 +2,60 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0f1d">
-<title>Evento Prove</title>
-<link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Area Organizzatore</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="gioco.js"></script>
 <style>
   * { box-sizing: border-box; }
-  body {
-    margin: 0; font-family: 'Merriweather', serif; color: #f5f5f5; min-height: 100vh;
-    background: radial-gradient(circle at 50% 20%, rgba(0,255,136,0.12) 0%, #0a0f1d 70%), #0a0f1d;
-  }
-  .schermata { display: none; min-height: 100vh; }
-  .schermata.attiva { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; text-align: center; }
-  .vista.attiva { display: block; justify-content: flex-start; text-align: left; padding: 0; }
-
-  .card { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-radius: 20px; padding: 24px 20px; max-width: 340px; width: 100%; display: flex; flex-direction: column; gap: 10px; }
-  .card h2 { margin: 0 0 4px; font-size: 1.4rem; }
-  .card p { margin: 0; font-size: 0.9rem; opacity: 0.85; line-height: 1.4; }
-
-  .btn { width: 100%; padding: 14px; font-family: inherit; font-size: 1rem; font-weight: 700; border: none; border-radius: 12px; background: #00ff88; color: #0a0f1d; cursor: pointer; }
-  .btn-bianco { background: #fff; color: #333; }
-  .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; font-size: 0.85rem; }
-  .btn-link { background: none; border: none; color: #00ff88; text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
-
-  .input-auth { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.3); background: #111827; color: #fff; font-family: inherit; font-size: 0.95rem; }
-  .errore { color: #ff4d4d; font-size: 0.85rem; min-height: 1em; }
-  .divider { font-size: 0.8rem; opacity: 0.6; }
-
-  #orologioGioco { font-size: 3.6rem; font-variant-numeric: tabular-nums; font-weight: 700; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.4); }
-  #dataReale { opacity: 0.75; text-transform: capitalize; font-size: 0.95rem; }
-  #statoUtente { color: #00ff88; font-size: 0.95rem; }
-  #posizioneTesto { font-size: 0.9rem; opacity: 0.9; }
-  .menu { width: 80%; max-width: 300px; }
-
-  .barra { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; }
-  .barra button { background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer; font-family: inherit; }
-  #mappa { height: 65vh; width: 100%; }
-  #posizioneMappa { padding: 12px 16px; font-size: 0.95rem; line-height: 1.4; }
-  .prova { background: #16213e; margin: 10px 16px; padding: 14px; border-radius: 12px; }
-  .prova small { opacity: 0.7; }
-  .leaflet-popup-content { font-size: 0.95rem; color: #222; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0a0f1d; color: #f5f5f5; }
+  .schermata { display: none; }
+  .schermata.attiva { display: block; }
+  #schermataLogin { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: rgba(17,24,39,0.95); border: 1px solid rgba(0,255,136,0.3); border-radius: 16px; padding: 24px 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; }
+  .card h2 { margin: 0 0 4px; color: #00ff88; }
+  .input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.3); background: #0a0f1d; color: #fff; font-size: 1rem; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; background: #00ff88; color: #0a0f1d; font-weight: 700; font-size: 1rem; cursor: pointer; }
+  .btn-rosso { background: none; color: #ff4d4d; border: 1px solid #ff4d4d; }
+  .errore { color: #ff4d4d; font-size: 0.9rem; min-height: 1em; margin: 0; }
+  #controlli { padding: 16px; background: #111827; border-bottom: 1px solid rgba(0,255,136,0.2); }
+  #statoGioco { font-weight: bold; color: #00ff88; margin: 0 0 10px; }
+  #controlli button { padding: 10px 14px; margin: 4px 4px 4px 0; font-size: 0.95rem; background: #00ff88; color: #0a0f1d; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+  #controlli button.secondario { background: #374151; color: #fff; }
+  #mappaAdmin { height: 50vh; width: 100%; }
+  #listaUtenti { padding: 16px; background: #111827; max-height: 30vh; overflow-y: auto; }
+  .utente-card { background: #1f2937; padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #00ff88; font-size: 0.9rem; }
 </style>
 </head>
 <body>
 
-<!-- 1. LOGIN -->
+<!-- LOGIN ORGANIZZATORE -->
 <div id="schermataLogin" class="schermata attiva">
   <div class="card">
-    <h2>Evento Prove</h2>
-    <p>Accedi per partecipare al gioco</p>
-    <button class="btn btn-bianco" onclick="accediGoogle()">🔵 Accedi con Google</button>
-    <div class="divider">oppure usa l'email</div>
-    <input type="email" id="emailInput" class="input-auth" placeholder="Email">
-    <input type="password" id="passwordInput" class="input-auth" placeholder="Password">
-    <button class="btn" id="btnEmailAction" onclick="gestisciEmailPassword()">Accedi</button>
-    <p id="erroreLogin" class="errore"></p>
-    <button class="btn-link" onclick="cambiaModalitaAuth()">Non hai un account? Registrati</button>
+    <h2>Area Organizzatore</h2>
+    <input type="email" id="email" class="input" placeholder="Email">
+    <input type="password" id="password" class="input" placeholder="Password">
+    <button class="btn" onclick="accedi()">Accedi</button>
+    <p id="errore" class="errore"></p>
   </div>
 </div>
 
-<!-- 2. POSIZIONE OBBLIGATORIA -->
-<div id="schermataPosizione" class="schermata">
-  <div class="card">
-    <h2>📍 Serve la posizione</h2>
-    <p>Per partecipare al gioco devi consentire la posizione. Viene condivisa solo con l'organizzatore mentre sei nella zona dell'evento.</p>
-    <button class="btn" onclick="richiediPosizione()">Consenti posizione</button>
-    <p id="errorePosizione" class="errore"></p>
-    <button class="btn btn-rosso" onclick="esci()">Esci dall'account</button>
+<!-- AREA ADMIN -->
+<div id="schermataAdmin" class="schermata">
+  <div id="controlli">
+    <p id="statoGioco">Orologio di gioco non avviato</p>
+    <button onclick="avviaGioco()">▶ Avvia (riprende da dove è fermo)</button>
+    <button class="secondario" onclick="fermaGioco()">⏸ Ferma</button>
+    <button class="secondario" onclick="resetGioco()">⏮ Reset a mezzanotte</button>
   </div>
-</div>
-
-<!-- 3. SCHERMATA PRINCIPALE -->
-<div id="schermataGioco" class="schermata">
-  <div id="statoUtente"></div>
-  <div style="font-size:0.9rem; opacity:0.8;">⏰ Ora di gioco (x2)</div>
-  <div id="orologioGioco">00:00:00</div>
-  <div id="dataReale"></div>
-  <button class="btn menu" onclick="vai('vistaMappa')">🗺️ Mappa</button>
-  <button class="btn menu" onclick="vai('vistaElenco')">📋 Elenco prove</button>
-  <p style="font-size:0.8rem; opacity:0.7;">📡 La tua posizione è condivisa con l'organizzatore</p>
-  <button class="btn btn-rosso menu" onclick="esci()">Esci dall'account</button>
-</div>
-
-<!-- 4. MAPPA -->
-<div id="vistaMappa" class="schermata vista">
-  <div class="barra"><button onclick="vai('schermataGioco')">← Indietro</button><b>Mappa</b><span></span></div>
-  <div id="mappa"></div>
-  <div id="posizioneMappa">📍 In attesa della posizione...</div>
-</div>
-
-<!-- 5. ELENCO PROVE -->
-<div id="vistaElenco" class="schermata vista">
-  <div class="barra"><button onclick="vai('schermataGioco')">← Indietro</button><b>Prove</b><span></span></div>
-  <div id="lista"></div>
+  <div id="mappaAdmin"></div>
+  <div id="listaUtenti">
+    <h3 style="margin-top:0">👥 Partecipanti online</h3>
+    <div id="contenutoLista">Nessun partecipante online al momento.</div>
+  </div>
+  <div style="padding:16px;">
+    <button class="btn btn-rosso" onclick="esci()">Esci dall'area admin</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -113,249 +68,136 @@
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const refGioco = db.collection('config').doc('evento');
 
-let utenteCorrente = null;
-let posizioneOk = false;
-let watchId = null;
-let ultimoInvio = 0;
+let mappaAdmin = null, gruppo = null;
+let unsubPosizioni = null, unsubGioco = null;
 let statoGioco = null;
-let ascoltaGioco = false;
-let modalitaRegistrazione = false;
-let markerMio = null;
 
-// ---------- Utilità schermate ----------
+// ---------- Utilità ----------
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 function mostra(id) {
   document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
   document.getElementById(id).classList.add('attiva');
 }
 
-function vai(id) {
-  mostra(id);
-  if (id === 'vistaMappa') setTimeout(() => mappaLeaflet.invalidateSize(), 150);
-}
+// ---------- Login ----------
+function accedi() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const err = document.getElementById('errore');
+  err.textContent = '';
 
-// ---------- Login Google ----------
-function accediGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  const errBox = document.getElementById('erroreLogin');
-  errBox.textContent = '';
-
-  auth.signInWithPopup(provider).catch(e => {
-    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
-    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
-      auth.signInWithRedirect(provider);
-    } else {
-      errBox.textContent = 'Accesso Google fallito: ' + e.code;
-    }
+  if (!email || !password) {
+    err.textContent = 'Inserisci email e password.';
+    return;
+  }
+  auth.signInWithEmailAndPassword(email, password).catch(e => {
+    err.textContent = 'Accesso negato: ' + e.code;
   });
 }
 
-auth.getRedirectResult().catch(e => {
-  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
-});
+function esci() { auth.signOut(); }
 
-// ---------- Login email/password ----------
-function gestisciEmailPassword() {
-  const email = document.getElementById('emailInput').value.trim();
-  const password = document.getElementById('passwordInput').value.trim();
-  const errBox = document.getElementById('erroreLogin');
-  errBox.textContent = '';
-
-  if (!email || !password) {
-    errBox.textContent = 'Inserisci email e password.';
-    return;
-  }
-  if (modalitaRegistrazione) {
-    auth.createUserWithEmailAndPassword(email, password).catch(e => {
-      errBox.textContent = 'Errore registrazione: ' + e.message;
-    });
-  } else {
-    auth.signInWithEmailAndPassword(email, password).catch(() => {
-      errBox.textContent = 'Credenziali non valide.';
-    });
-  }
-}
-
-function cambiaModalitaAuth() {
-  modalitaRegistrazione = !modalitaRegistrazione;
-  document.getElementById('btnEmailAction').textContent = modalitaRegistrazione ? 'Registrati' : 'Accedi';
-  document.querySelector('.btn-link').textContent = modalitaRegistrazione
-    ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati';
-  document.getElementById('erroreLogin').textContent = '';
-}
-
-// ---------- Stato di accesso ----------
 auth.onAuthStateChanged(u => {
-  utenteCorrente = u;
-
-  if (!u) {
-    stopPosizione();
-    statoGioco = null;
-    mostra('schermataLogin');
+  if (u && u.email === ADMIN_EMAIL) {
+    mostra('schermataAdmin');
+    avviaMappaAdmin();
+    avviaOrologio();
+    avviaPosizioni();
+    setTimeout(() => mappaAdmin.invalidateSize(), 150);
     return;
   }
 
-  avviaAscoltoGioco();
-  document.getElementById('statoUtente').textContent = '👤 ' + (u.displayName || u.email);
-
-  if (posizioneOk) {
-    mostra('schermataGioco');
-  } else {
-    mostra('schermataPosizione');
-    controllaPermessoPosizione();
+  if (u) {
+    // Account che non è l'admin: lo disconnette e mostra il messaggio
+    document.getElementById('errore').textContent = 'Account non autorizzato come organizzatore.';
+    auth.signOut();
+    return;
   }
+
+  // Nessuno connesso: torna al login e ferma gli ascolti
+  mostra('schermataLogin');
+  if (unsubPosizioni) { unsubPosizioni(); unsubPosizioni = null; }
+  if (unsubGioco) { unsubGioco(); unsubGioco = null; }
+  statoGioco = null;
 });
 
-// Se il permesso è già concesso, parte da solo. Altrimenti serve il pulsante.
-function controllaPermessoPosizione() {
-  if (navigator.permissions && navigator.permissions.query) {
-    navigator.permissions.query({ name: 'geolocation' }).then(p => {
-      if (p.state === 'granted') avviaPosizione();
-    }).catch(() => {});
-  }
+// ---------- Mappa ----------
+function avviaMappaAdmin() {
+  if (mappaAdmin) return;
+  mappaAdmin = L.map('mappaAdmin').setView(ZONA.centro, ZONA.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(mappaAdmin);
+  PROVE.forEach(p => L.marker([p.lat, p.lng]).addTo(mappaAdmin).bindPopup(escapeHtml(p.nome)));
+  gruppo = L.layerGroup().addTo(mappaAdmin);
 }
 
-// ---------- Posizione obbligatoria ----------
-function richiediPosizione() {
-  const err = document.getElementById('errorePosizione');
-  err.textContent = '';
-  if (!navigator.geolocation) {
-    err.textContent = 'Il browser non supporta la geolocalizzazione.';
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    () => avviaPosizione(),
-    e => {
-      err.textContent = e.code === 1
-        ? "Hai negato la posizione. Riattivala nelle impostazioni del browser (icona del lucchetto accanto all'indirizzo) e ricarica la pagina."
-        : 'Impossibile ottenere la posizione. Riprova all\'aperto o con il GPS attivo.';
-    },
-    { enableHighAccuracy: true, timeout: 15000 }
-  );
-}
+// ---------- Posizioni partecipanti ----------
+function avviaPosizioni() {
+  if (unsubPosizioni) return;
+  unsubPosizioni = db.collection('posizioni').onSnapshot(snap => {
+    gruppo.clearLayers();
 
-function avviaPosizione() {
-  if (posizioneOk || !utenteCorrente) return;
-  posizioneOk = true;
-  mostra('schermataGioco');
-
-  watchId = navigator.geolocation.watchPosition(aggiornaPosizione, e => {
-    if (e.code === 1) {
-      // Permesso revocato mentre usa l'app: torna al blocco
-      stopPosizione();
-      mostra('schermataPosizione');
-      document.getElementById('errorePosizione').textContent =
-        'Posizione disattivata. Riattivala per continuare.';
+    if (snap.empty) {
+      document.getElementById('contenutoLista').textContent = 'Nessun partecipante online al momento.';
+      return;
     }
-  }, { enableHighAccuracy: true, maximumAge: 5000 });
-}
 
-function stopPosizione() {
-  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-  watchId = null;
-  posizioneOk = false;
-}
+    let html = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const nome = escapeHtml(d.nome || 'Partecipante');
+      const ora = d.aggiornato && d.aggiornato.toDate
+        ? d.aggiornato.toDate().toLocaleTimeString('it-IT') : '—';
 
-function distanza(lat1, lng1, lat2, lng2) {
-  const R = 6371000, rad = x => x * Math.PI / 180;
-  const dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
+      L.circleMarker([d.lat, d.lng], { radius: 9, color: '#0a0f1d', fillColor: '#00ff88', fillOpacity: 1 })
+        .bindPopup(`<b>${nome}</b><br>Aggiornato: ${ora}`)
+        .addTo(gruppo);
 
-function aggiornaPosizione(pos) {
-  const { latitude: lat, longitude: lng } = pos.coords;
-
-  if (!markerMio) {
-    markerMio = L.circleMarker([lat, lng], { radius: 9, color: '#fff', fillColor: '#1e90ff', fillOpacity: 1 }).addTo(mappaLeaflet);
-  } else {
-    markerMio.setLatLng([lat, lng]);
-  }
-
-  const dentro = lat >= ZONA.latMin && lat <= ZONA.latMax && lng >= ZONA.lngMin && lng <= ZONA.lngMax;
-  const testo = document.getElementById('posizioneMappa');
-
-  if (dentro) {
-    let vicina = null, min = Infinity;
-    PROVE.forEach(p => {
-      const d = distanza(lat, lng, p.lat, p.lng);
-      if (d < min) { min = d; vicina = p; }
+      html += `
+        <div class="utente-card">
+          <b>👤 ${nome}</b><br>
+          📍 Lat: ${d.lat.toFixed(4)}, Lng: ${d.lng.toFixed(4)}<br>
+          🕒 Ultimo aggiornamento: ${ora}
+        </div>`;
     });
-    testo.innerHTML = `📍 Ti trovi a Luvinate. Prova più vicina: <b>${vicina.nome}</b> (${Math.round(min)} m)`;
-  } else {
-    testo.textContent = "📍 Sei fuori dalla zona dell'evento: la posizione non viene inviata.";
-  }
-
-  // Invio all'organizzatore: solo dentro la zona, al massimo ogni 20 secondi
-  if (dentro && utenteCorrente && Date.now() - ultimoInvio > 20000) {
-    ultimoInvio = Date.now();
-    const nome = (utenteCorrente.displayName || utenteCorrente.email || 'Partecipante').substring(0, 30);
-    db.collection('posizioni').doc(utenteCorrente.uid).set({
-      lat, lng, nome,
-      aggiornato: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(e => console.error('Invio posizione fallito', e));
-  }
-}
-
-// ---------- Esci ----------
-function esci() {
-  if (utenteCorrente) {
-    db.collection('posizioni').doc(utenteCorrente.uid).delete().catch(() => {});
-  }
-  auth.signOut();
+    document.getElementById('contenutoLista').innerHTML = html;
+  }, err => console.error('Lettura posizioni fallita', err));
 }
 
 // ---------- Orologio di gioco ----------
-function avviaAscoltoGioco() {
-  if (ascoltaGioco) return;
-  ascoltaGioco = true;
-  db.collection('config').doc('evento').onSnapshot(doc => {
+function avviaOrologio() {
+  if (unsubGioco) return;
+  unsubGioco = refGioco.onSnapshot(doc => {
     statoGioco = doc.data() || null;
   }, err => console.error('Lettura orologio fallita', err));
 }
 
 setInterval(() => {
-  const el = document.getElementById('orologioGioco');
-  el.textContent = statoGioco ? formatoGioco(tempoGioco(statoGioco)) : '00:00:00';
+  if (!document.getElementById('schermataAdmin').classList.contains('attiva')) return;
+  if (!statoGioco) {
+    document.getElementById('statoGioco').textContent = 'Orologio di gioco non avviato';
+    return;
+  }
+  document.getElementById('statoGioco').textContent =
+    (statoGioco.attivo ? '🟢 In corso (x2)' : '⏸ Fermo') +
+    ' · Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco));
 }, 1000);
 
-// ---------- Orologio reale ----------
-function aggiornaDataReale() {
-  document.getElementById('dataReale').textContent =
-    new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+function avviaGioco() {
+  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
 }
-aggiornaDataReale();
-
-// ---------- Elenco prove ----------
-const ICONE = { fortuna: '🍀', mondo: '🌍', animali: '🐾' };
-const icona = tipo => ICONE[tipo] || '⭐';
-
-document.getElementById('lista').innerHTML = PROVE.map(p => `
-  <div class="prova">
-    <b>${icona(p.tipo)} ${p.nome}</b><br>
-    <small>🕒 ${p.orario}</small>
-    <p>${p.descrizione}</p>
-  </div>`).join('');
-
-// ---------- Mappa ----------
-const bounds = L.latLngBounds([ZONA.latMin, ZONA.lngMin], [ZONA.latMax, ZONA.lngMax]);
-const mappaLeaflet = L.map('mappa', {
-  minZoom: ZONA.zoom - 1,
-  maxZoom: 18,
-  maxBounds: bounds.pad(0.2),
-  maxBoundsViscosity: 1.0
-}).setView(ZONA.centro, ZONA.zoom);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap'
-}).addTo(mappaLeaflet);
-
-PROVE.forEach(p => {
-  L.marker([p.lat, p.lng]).addTo(mappaLeaflet).bindPopup(
-    `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br>${p.descrizione}`
-  );
-});
+function fermaGioco() {
+  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+}
+function resetGioco() {
+  refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
+}
 </script>
 </body>
 </html>
