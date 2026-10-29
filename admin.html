@@ -87,14 +87,20 @@ function escapeHtml(t) {
 
 function mostra(id) {
   document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
-  document.getElementById(id).classList.add('attiva');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('attiva');
 }
 
 // ---------- Login ----------
 function accedi() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
   const err = document.getElementById('errore');
+
+  if (!emailInput || !passwordInput || !err) return;
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
   err.textContent = 'Verifica credenziali in corso...';
 
   if (!email || !password) {
@@ -102,47 +108,41 @@ function accedi() {
     return;
   }
 
-  // Stampa di controllo nei log del browser
-  console.log("Tentativo login con email:", email);
-  console.log("Email Admin attesa da config.js:", typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : "SCONOSCIUTA (config.js non caricato)");
-
   auth.signInWithEmailAndPassword(email, password)
-    .then(cred => {
-      console.log("Autenticazione Firebase riuscita per:", cred.user.email);
+    .then(() => {
+      err.textContent = '';
     })
     .catch(e => {
-      console.error("Errore Firebase Login:", e);
+      console.error("Errore Login Firebase:", e);
       const traduzioni = {
         'auth/invalid-credential': 'Email o password non corrette.',
         'auth/user-not-found': 'Utente non trovato nel database Firebase.',
         'auth/wrong-password': 'Password errata.',
         'auth/invalid-email': 'Formato email non valido.',
         'auth/too-many-requests': 'Troppi tentativi falliti: attendi un paio di minuti.',
-        'auth/network-request-failed': 'Errore di connessione a Internet o Firebase bloccato.'
+        'auth/network-request-failed': 'Errore di connessione a Internet.'
       };
-      err.textContent = 'Errore (' + e.code + '): ' + (traduzioni[e.code] || e.message);
+      err.textContent = traduzioni[e.code] || ('Errore (' + e.code + '): ' + e.message);
     });
 }
 
 function esci() { auth.signOut(); }
 
 auth.onAuthStateChanged(u => {
-  if (u) {
-    console.log("Utente collegato a Firebase:", u.email);
-    console.log("Confronto email con ADMIN_EMAIL:", u.email === ADMIN_EMAIL);
-  }
+  const err = document.getElementById('errore');
 
-  if (u && u.email === ADMIN_EMAIL) {
+  if (u && typeof ADMIN_EMAIL !== 'undefined' && u.email === ADMIN_EMAIL) {
     mostra('schermataAdmin');
     avviaMappaAdmin();
     avviaOrologio();
     avviaPosizioni();
-    setTimeout(() => mappaAdmin.invalidateSize(), 150);
+    setTimeout(() => { if (mappaAdmin) mappaAdmin.invalidateSize(); }, 150);
     return;
   }
 
   if (u) {
-    document.getElementById('errore').textContent = `Account non autorizzato: l'email "${u.email}" non corrisponde a quella admin.`;
+    const adminAttesa = typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : 'SCONOSCIUTA (config.js non caricato)';
+    if (err) err.textContent = `Account non autorizzato: "${u.email}" non corrisponde ad ADMIN_EMAIL (${adminAttesa}).`;
     auth.signOut();
     return;
   }
@@ -153,21 +153,25 @@ auth.onAuthStateChanged(u => {
   statoGioco = null;
 });
 
-  // Nessuno connesso: torna al login e ferma gli ascolti
-  mostra('schermataLogin');
-  if (unsubPosizioni) { unsubPosizioni(); unsubPosizioni = null; }
-  if (unsubGioco) { unsubGioco(); unsubGioco = null; }
-  statoGioco = null;
-});
-
 // ---------- Mappa ----------
 function avviaMappaAdmin() {
   if (mappaAdmin) return;
   mappaAdmin = L.map('mappaAdmin').setView(ZONA.centro, ZONA.zoom);
+  
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
   }).addTo(mappaAdmin);
-  PROVE.forEach(p => L.marker([p.lat, p.lng]).addTo(mappaAdmin).bindPopup(escapeHtml(p.nome)));
+
+  PROVE.forEach(p => {
+    L.circle([p.lat, p.lng], {
+      radius: 10,
+      color: '#00ff88',
+      weight: 2,
+      fillColor: '#00ff88',
+      fillOpacity: 0.35
+    }).addTo(mappaAdmin).bindPopup(escapeHtml(p.nome));
+  });
+
   gruppo = L.layerGroup().addTo(mappaAdmin);
 }
 
@@ -175,10 +179,11 @@ function avviaMappaAdmin() {
 function avviaPosizioni() {
   if (unsubPosizioni) return;
   unsubPosizioni = db.collection('posizioni').onSnapshot(snap => {
-    gruppo.clearLayers();
+    if (gruppo) gruppo.clearLayers();
+    const cont = document.getElementById('contenutoLista');
 
     if (snap.empty) {
-      document.getElementById('contenutoLista').textContent = 'Nessun partecipante online al momento.';
+      if (cont) cont.textContent = 'Nessun partecipante online al momento.';
       return;
     }
 
@@ -189,18 +194,20 @@ function avviaPosizioni() {
       const ora = d.aggiornato && d.aggiornato.toDate
         ? d.aggiornato.toDate().toLocaleTimeString('it-IT') : '—';
 
-      L.circleMarker([d.lat, d.lng], { radius: 9, color: '#0a0f1d', fillColor: '#00ff88', fillOpacity: 1 })
-        .bindPopup(`<b>${nome}</b><br>Aggiornato: ${ora}`)
-        .addTo(gruppo);
+      if (gruppo) {
+        L.circleMarker([d.lat, d.lng], { radius: 9, color: '#0a0f1d', fillColor: '#00ff88', fillOpacity: 1 })
+          .bindPopup(`<b>${nome}</b><br>Aggiornato: ${ora}`)
+          .addTo(gruppo);
+      }
 
       html += `
         <div class="utente-card">
           <b>👤 ${nome}</b><br>
-          📍 Lat: ${d.lat.toFixed(4)}, Lng: ${d.lng.toFixed(4)}<br>
+          📍 Lat: ${d.lat ? d.lat.toFixed(4) : '—'}, Lng: ${d.lng ? d.lng.toFixed(4) : '—'}<br>
           🕒 Ultimo aggiornamento: ${ora}
         </div>`;
     });
-    document.getElementById('contenutoLista').innerHTML = html;
+    if (cont) cont.innerHTML = html;
   }, err => console.error('Lettura posizioni fallita', err));
 }
 
@@ -213,50 +220,27 @@ function avviaOrologio() {
 }
 
 setInterval(() => {
-  if (!document.getElementById('schermataAdmin').classList.contains('attiva')) return;
+  const adminScreen = document.getElementById('schermataAdmin');
+  const statoEl = document.getElementById('statoGioco');
+  if (!adminScreen || !adminScreen.classList.contains('attiva') || !statoEl) return;
+
   if (!statoGioco) {
-    document.getElementById('statoGioco').textContent = 'Orologio di gioco non avviato';
+    statoEl.textContent = 'Orologio di gioco non avviato';
     return;
   }
-  document.getElementById('statoGioco').textContent =
-    (statoGioco.attivo ? '🟢 In corso (x2)' : '⏸ Fermo') +
-    ' · Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco));
+
+  const orarioFormattato = typeof formatoGioco === 'function' && typeof tempoGioco === 'function'
+    ? formatoGioco(tempoGioco(statoGioco))
+    : '19:00:00';
+
+  statoEl.textContent = (statoGioco.attivo ? '🟢 In corso (x2)' : '⏸ Fermo') + ' · Ora di gioco: ' + orarioFormattato;
 }, 1000);
 
-// Millisecondi esatti per le ore 19:00:00
-const MS_19_00 = 19 * 60 * 60 * 1000; // 68400000 ms
+const MS_19_00 = 19 * 60 * 60 * 1000;
 
 function avviaGioco() {
-  // Se l'orologio non ha un tempo valido salvato o è a 0, parte dalle 19:00
-  let tempoCorrente = statoGioco ? tempoGioco(statoGioco) : MS_19_00;
-  if (!tempoCorrente || tempoCorrente === 0) {
-    tempoCorrente = MS_19_00;
-  }
-
-  refGioco.set({ 
-    attivo: true, 
-    gioco0: tempoCorrente, 
-    reale0: Date.now() 
-  });
-}
-
-function fermaGioco() {
-  const tempoCorrente = statoGioco ? tempoGioco(statoGioco) : MS_19_00;
-  refGioco.set({ 
-    attivo: false, 
-    gioco0: tempoCorrente, 
-    reale0: Date.now() 
-  });
-}
-
-function resetGioco19() {
-  // Forza il ripristino istantaneo su Firebase alle ore 19:00:00
-  refGioco.set({ 
-    attivo: false, 
-    gioco0: MS_19_00, 
-    reale0: Date.now() 
-  });
-}
+  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : MS_19_00;
+  if (!tempoCorrente || tempoCorrente === 0) tempoCorrente = MS_19_00
 </script>
 </body>
 </html>
