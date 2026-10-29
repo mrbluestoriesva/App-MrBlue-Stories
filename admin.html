@@ -27,6 +27,12 @@
   #mappaAdmin { height: 50vh; width: 100%; }
   #listaUtenti { padding: 16px; background: #111827; max-height: 30vh; overflow-y: auto; }
   .utente-card { background: #1f2937; padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #00ff88; font-size: 0.9rem; }
+  #mappaAdmin { height: 50vh; width: 100%; }
+
+  /* Trasforma la mappa in modalità scura */
+  .leaflet-tile-pane {
+    filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
+  }
 </style>
 </head>
 <body>
@@ -48,9 +54,7 @@
     <p id="statoGioco">Orologio di gioco non avviato</p>
     <button onclick="avviaGioco()">▶ Avvia (riprende da dove è fermo)</button>
     <button class="secondario" onclick="fermaGioco()">⏸ Ferma</button>
-    <button class="secondario" onclick="reset19()">⏮ Imposta alle 19:00</button>
-  </div>
-  <div id="mappaAdmin"></div>
+    <button class="secondario" onclick="resetGioco19()">⏮ Imposta alle 19:00</button>  <div id="mappaAdmin"></div>
   <div id="listaUtenti">
     <h3 style="margin-top:0">👥 Partecipanti online</h3>
     <div id="contenutoLista">Nessun partecipante online al momento.</div>
