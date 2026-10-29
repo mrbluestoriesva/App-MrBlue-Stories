@@ -382,28 +382,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(mappaLeaflet);
 
-const gruppoProve = L.featureGroup();
-
 PROVE.forEach(p => {
-  const cerchio = L.circle([p.lat, p.lng], {
-    radius: 10,
-    color: '#00ff88',
-    weight: 2,
-    fillColor: '#00ff88',
-    fillOpacity: 0.35
-  }).bindPopup(
+  L.circle([p.lat, p.lng], {
+    radius: 10,           // 10 metri reali sul terreno
+    color: '#00ff88',      // Bordo verde neon
+    weight: 2,             // Spessore bordo
+    fillColor: '#00ff88',  // Colore di riempimento
+    fillOpacity: 0.35      // Trasparenza dell'area
+  }).addTo(mappaLeaflet).bindPopup(
     `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br>${p.descrizione}`
   );
-  
-  cerchio.addTo(gruppoProve);
 });
-
-gruppoProve.addTo(mappaLeaflet);
-
-// Forza la mappa a zoomare e inquadrare perfettamente tutte le prove
-if (PROVE.length > 0) {
-  mappaLeaflet.fitBounds(gruppoProve.getBounds(), { padding: [50, 50] });
-}
 </script>
 </body>
 </html>
