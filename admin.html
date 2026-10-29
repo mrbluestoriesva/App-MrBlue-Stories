@@ -95,20 +95,43 @@ function accedi() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const err = document.getElementById('errore');
-  err.textContent = '';
+  err.textContent = 'Verifica credenziali in corso...';
 
   if (!email || !password) {
-    err.textContent = 'Inserisci email e password.';
+    err.textContent = 'Inserisci sia email che password.';
     return;
   }
-  auth.signInWithEmailAndPassword(email, password).catch(e => {
-    err.textContent = 'Accesso negato: ' + e.code;
-  });
+
+  // Stampa di controllo nei log del browser
+  console.log("Tentativo login con email:", email);
+  console.log("Email Admin attesa da config.js:", typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : "SCONOSCIUTA (config.js non caricato)");
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(cred => {
+      console.log("Autenticazione Firebase riuscita per:", cred.user.email);
+    })
+    .catch(e => {
+      console.error("Errore Firebase Login:", e);
+      const traduzioni = {
+        'auth/invalid-credential': 'Email o password non corrette.',
+        'auth/user-not-found': 'Utente non trovato nel database Firebase.',
+        'auth/wrong-password': 'Password errata.',
+        'auth/invalid-email': 'Formato email non valido.',
+        'auth/too-many-requests': 'Troppi tentativi falliti: attendi un paio di minuti.',
+        'auth/network-request-failed': 'Errore di connessione a Internet o Firebase bloccato.'
+      };
+      err.textContent = 'Errore (' + e.code + '): ' + (traduzioni[e.code] || e.message);
+    });
 }
 
 function esci() { auth.signOut(); }
 
 auth.onAuthStateChanged(u => {
+  if (u) {
+    console.log("Utente collegato a Firebase:", u.email);
+    console.log("Confronto email con ADMIN_EMAIL:", u.email === ADMIN_EMAIL);
+  }
+
   if (u && u.email === ADMIN_EMAIL) {
     mostra('schermataAdmin');
     avviaMappaAdmin();
@@ -119,11 +142,16 @@ auth.onAuthStateChanged(u => {
   }
 
   if (u) {
-    // Account diverso dall'admin: lo disconnette e mostra il messaggio
-    document.getElementById('errore').textContent = 'Account non autorizzato come organizzatore.';
+    document.getElementById('errore').textContent = `Account non autorizzato: l'email "${u.email}" non corrisponde a quella admin.`;
     auth.signOut();
     return;
   }
+
+  mostra('schermataLogin');
+  if (unsubPosizioni) { unsubPosizioni(); unsubPosizioni = null; }
+  if (unsubGioco) { unsubGioco(); unsubGioco = null; }
+  statoGioco = null;
+});
 
   // Nessuno connesso: torna al login e ferma gli ascolti
   mostra('schermataLogin');
