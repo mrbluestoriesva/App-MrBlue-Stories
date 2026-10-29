@@ -45,10 +45,12 @@
   .barra b { font-size: 1.1rem; }
   .barra button { background: none; border: none; color: #00ff88; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; }
   #mappa { height: 65vh; width: 100%; }
+
   /* Trasforma la mappa OpenStreetMap standard in modalità scura */
   .leaflet-tile-pane {
     filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
   }
+
   #posizioneMappa { padding: 14px 16px; font-size: 0.95rem; line-height: 1.4; background: rgba(17,24,39,0.95); border-top: 1px solid rgba(0,255,136,0.25); }
   #vistaElenco #lista { padding-bottom: 24px; }
   .prova { background: rgba(17,24,39,0.9); border: 1px solid rgba(0,255,136,0.3); border-left: 4px solid #00ff88; border-radius: 16px; margin: 12px 16px; padding: 16px; text-align: left; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
@@ -65,6 +67,8 @@
   <div class="card">
     <h2>Evento Prove</h2>
     <p>Accedi per partecipare al gioco</p>
+    <button class="btn btn-bianco" onclick="accediGoogle()">🌐 Accedi con Google</button>
+    <div class="divider">— oppure —</div>
     <input type="email" id="emailInput" class="input-auth" placeholder="Email">
     <input type="password" id="passwordInput" class="input-auth" placeholder="Password">
     <button class="btn" id="btnEmailAction" onclick="gestisciEmailPassword()">Accedi</button>
@@ -76,7 +80,7 @@
 <!-- 2. POSIZIONE OBBLIGATORIA -->
 <div id="schermataPosizione" class="schermata">
   <div class="card">
-    <h2></h2>Serve la posizione</h2>
+    <h2>Serve la posizione</h2>
     <p>Per partecipare al gioco devi consentire la posizione. Viene condivisa solo con l'organizzatore mentre sei nella zona dell'evento.</p>
     <button class="btn" onclick="richiediPosizione()">Consenti posizione</button>
     <p id="errorePosizione" class="errore"></p>
@@ -88,7 +92,7 @@
 <div id="schermataGioco" class="schermata">
   <div id="statoUtente"></div>
   <div style="font-size:0.9rem; opacity:0.8;">Ora di gioco (x2)</div>
-  <div id="orologioGioco">00:00:00</div>
+  <div id="orologioGioco">19:00:00</div>
   <div id="dataReale"></div>
   <button class="btn menu" onclick="vai('vistaMappa')">🗺️ Mappa</button>
   <button class="btn menu" onclick="vai('vistaElenco')">📋 Elenco prove</button>
@@ -115,7 +119,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="prove.js"></script>
-<script src="prove.js?v=2"></script>
 <script>
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
@@ -161,12 +164,8 @@ function accediGoogle() {
 
 // Gestisce il ritorno dal redirect (se è stato usato)
 auth.getRedirectResult().catch(e => {
-  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
-});
-
-// Gestisce il ritorno dal redirect (se è stato usato)
-auth.getRedirectResult().catch(e => {
-  document.getElementById('erroreLogin').textContent = 'Accesso Google fallito: ' + e.code;
+  const errBox = document.getElementById('erroreLogin');
+  if (errBox) errBox.textContent = 'Accesso Google fallito: ' + e.code;
 });
 
 // ---------- Login email/password ----------
@@ -344,7 +343,14 @@ function avviaAscoltoGioco() {
 
 setInterval(() => {
   const el = document.getElementById('orologioGioco');
-  el.textContent = statoGioco ? formatoGioco(tempoGioco(statoGioco)) : '00:00:00';
+  if (!el) return;
+  const MS_19_00 = 19 * 60 * 60 * 1000;
+
+  if (typeof tempoGioco === 'function' && typeof formatoGioco === 'function') {
+    el.textContent = statoGioco ? formatoGioco(tempoGioco(statoGioco)) : formatoGioco(MS_19_00);
+  } else {
+    el.textContent = '19:00:00';
+  }
 }, 1000);
 
 // ---------- Orologio reale ----------
