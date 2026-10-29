@@ -191,14 +191,23 @@ setInterval(() => {
     ' · Ora di gioco: ' + formatoGioco(tempoGioco(statoGioco));
 }, 1000);
 
+// Millisecondi per le ore 19:00:00 (19 * 60 * 60 * 1000)
+const MS_19_00 = 68400000;
+
 function avviaGioco() {
-  refGioco.set({ attivo: true, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+  // Se non esiste ancora un tempo di gioco salvato, parte dalle 19:00 (68400000 ms)
+  const tempoAttuale = statoGioco ? tempoGioco(statoGioco) : MS_19_00;
+  refGioco.set({ attivo: true, gioco0: tempoAttuale, reale0: Date.now() });
 }
+
 function fermaGioco() {
-  refGioco.set({ attivo: false, gioco0: tempoGioco(statoGioco), reale0: Date.now() });
+  const tempoAttuale = statoGioco ? tempoGioco(statoGioco) : MS_19_00;
+  refGioco.set({ attivo: false, gioco0: tempoAttuale, reale0: Date.now() });
 }
+
 function resetGioco() {
-  refGioco.set({ attivo: false, gioco0: 0, reale0: Date.now() });
+  // Resetta l'orologio direttamente alle 19:00:00
+  refGioco.set({ attivo: false, gioco0: MS_19_00, reale0: Date.now() });
 }
 </script>
 </body>
