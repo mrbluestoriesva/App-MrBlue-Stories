@@ -378,17 +378,19 @@ const mappaLeaflet = L.map('mappa', {
   maxBoundsViscosity: 1.0
 }).setView(ZONA.centro, ZONA.zoom);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap'
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 20
 }).addTo(mappaLeaflet);
 
 PROVE.forEach(p => {
   L.circle([p.lat, p.lng], {
-    radius: 10,           // 10 metri reali sul terreno
+    radius: 25,           // 25 metri reali sul terreno
     color: '#00ff88',      // Bordo verde neon
-    weight: 2,             // Spessore bordo
+    weight: 3,             // Spessore bordo
     fillColor: '#00ff88',  // Colore di riempimento
-    fillOpacity: 0.35      // Trasparenza dell'area
+    fillOpacity: 0.5      // Trasparenza dell'area
   }).addTo(mappaLeaflet).bindPopup(
     `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br>${p.descrizione}`
   );
