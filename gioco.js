@@ -2,18 +2,13 @@
 const MOLTIPLICATORE = 2; 
 const MS_GIORNO = 24 * 60 * 60 * 1000;
 
-// Calcola i millisecondi corrispondenti alle 17:45:00 del giorno corrente
-function getTimestamp1745() {
-  const ora = new Date();
-  ora.setHours(17, 45, 0, 0);
-  return ora.getTime();
-}
+// Calcola i millisecondi corrispondenti alle 19:00:00 (19 ore * 3600 sec * 1000 ms)
+const MS_19_00 = 19 * 60 * 60 * 1000;
 
 function tempoGioco(stato) {
-  if (!stato) return 0;
+  // Se non c'è ancora uno stato salvato, parte dalle 19:00:00
+  if (!stato) return MS_19_00;
   
-  // Se il gioco è attivo, calcoliamo quanto tempo reale è passato da quando l'admin lo ha avviato
-  // moltiplicandolo per 2, partendo dalla base di gioco0 (che alle 17:45 sarà 0).
   if (stato.attivo) {
     const trascorsoReale = Date.now() - stato.reale0;
     return (stato.gioco0 + (trascorsoReale * MOLTIPLICATORE)) % MS_GIORNO;
