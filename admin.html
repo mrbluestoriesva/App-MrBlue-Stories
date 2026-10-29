@@ -71,7 +71,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="prove.js"></script>
+<script src="gioco.js"></script>
+
 <script>
+// ---------- Inizializzazione Firebase ----------
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -80,6 +83,9 @@ const refGioco = db.collection('config').doc('evento');
 let mappaAdmin = null, gruppo = null;
 let unsubPosizioni = null, unsubGioco = null;
 let statoGioco = null;
+
+// Fallback sicuro se MS_19_00 non fosse letto da gioco.js
+const OFFSET_19 = typeof MS_19_00 !== 'undefined' ? MS_19_00 : (19 * 60 * 60 * 1000);
 
 // ---------- Utilità ----------
 function escapeHtml(t) {
@@ -92,7 +98,7 @@ function mostra(id) {
   if (el) el.classList.add('attiva');
 }
 
-// ---------- Login ----------
+// ---------- Login Organizzatore ----------
 function accedi() {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
@@ -120,7 +126,7 @@ function accedi() {
         'auth/user-not-found': 'Utente non trovato nel database Firebase.',
         'auth/wrong-password': 'Password errata.',
         'auth/invalid-email': 'Formato email non valido.',
-        'auth/too-many-requests': 'Troppi tentativi falliti: attendi un paio di minuti.',
+        'auth/too-many-requests': 'Troppi tentativi falliti: attendi qualche minuto.',
         'auth/network-request-failed': 'Errore di connessione a Internet.'
       };
       err.textContent = traduzioni[e.code] || ('Errore (' + e.code + '): ' + e.message);
@@ -142,7 +148,7 @@ auth.onAuthStateChanged(u => {
   }
 
   if (u) {
-    const adminAttesa = typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : 'SCONOSCIUTA (config.js non caricato)';
+    const adminAttesa = typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : 'SCONOSCIUTA';
     if (err) err.textContent = `Account non autorizzato: "${u.email}" non corrisponde ad ADMIN_EMAIL (${adminAttesa}).`;
     auth.signOut();
     return;
@@ -154,24 +160,29 @@ auth.onAuthStateChanged(u => {
   statoGioco = null;
 });
 
-// ---------- Mappa ----------
+// ---------- Mappa Admin ----------
 function avviaMappaAdmin() {
   if (mappaAdmin) return;
-  mappaAdmin = L.map('mappaAdmin').setView(ZONA.centro, ZONA.zoom);
+  const centro = (typeof ZONA !== 'undefined' && ZONA.centro) ? ZONA.centro : [45.8405, 8.773];
+  const zoom = (typeof ZONA !== 'undefined' && ZONA.zoom) ? ZONA.zoom : 15;
+
+  mappaAdmin = L.map('mappaAdmin').setView(centro, zoom);
   
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
   }).addTo(mappaAdmin);
 
-  PROVE.forEach(p => {
-    L.circle([p.lat, p.lng], {
-      radius: 10,
-      color: '#00ff88',
-      weight: 2,
-      fillColor: '#00ff88',
-      fillOpacity: 0.35
-    }).addTo(mappaAdmin).bindPopup(escapeHtml(p.nome));
-  });
+  if (typeof PROVE !== 'undefined' && Array.isArray(PROVE)) {
+    PROVE.forEach(p => {
+      L.circle([p.lat, p.lng], {
+        radius: 10,
+        color: '#00ff88',
+        weight: 2,
+        fillColor: '#00ff88',
+        fillOpacity: 0.35
+      }).addTo(mappaAdmin).bindPopup(escapeHtml(p.nome));
+    });
+  }
 
   gruppo = L.layerGroup().addTo(mappaAdmin);
 }
@@ -237,22 +248,20 @@ setInterval(() => {
   statoEl.textContent = (statoGioco.attivo ? '🟢 In corso (x2)' : '⏸ Fermo') + ' · Ora di gioco: ' + orarioFormattato;
 }, 1000);
 
-const MS_19_00 = 19 * 60 * 60 * 1000;
-
 function avviaGioco() {
-  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : MS_19_00;
-  if (!tempoCorrente || tempoCorrente === 0) tempoCorrente = MS_19_00;
+  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : OFFSET_19;
+  if (!tempoCorrente || tempoCorrente === 0) tempoCorrente = OFFSET_19;
 
   refGioco.set({ attivo: true, gioco0: tempoCorrente, reale0: Date.now() });
 }
 
 function fermaGioco() {
-  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : MS_19_00;
+  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : OFFSET_19;
   refGioco.set({ attivo: false, gioco0: tempoCorrente, reale0: Date.now() });
 }
 
 function resetGioco19() {
-  refGioco.set({ attivo: false, gioco0: MS_19_00, reale0: Date.now() });
+  refGioco.set({ attivo: false, gioco0: OFFSET_19, reale0: Date.now() });
 }
 </script>
 </body>
