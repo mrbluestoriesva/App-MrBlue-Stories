@@ -27,7 +27,6 @@
   #mappaAdmin { height: 50vh; width: 100%; }
   #listaUtenti { padding: 16px; background: #111827; max-height: 30vh; overflow-y: auto; }
   .utente-card { background: #1f2937; padding: 10px 14px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #00ff88; font-size: 0.9rem; }
-  #mappaAdmin { height: 50vh; width: 100%; }
 
   /* Trasforma la mappa in modalità scura */
   .leaflet-tile-pane {
@@ -43,7 +42,7 @@
     <h2>Area Organizzatore</h2>
     <input type="email" id="email" class="input" placeholder="Email">
     <input type="password" id="password" class="input" placeholder="Password">
-    <button class="btn" onclick="accedi()">Accedi</button>
+    <button type="button" class="btn" onclick="accedi()">Accedi</button>
     <p id="errore" class="errore"></p>
   </div>
 </div>
@@ -52,15 +51,17 @@
 <div id="schermataAdmin" class="schermata">
   <div id="controlli">
     <p id="statoGioco">Orologio di gioco non avviato</p>
-    <button onclick="avviaGioco()">▶ Avvia (riprende da dove è fermo)</button>
-    <button class="secondario" onclick="fermaGioco()">⏸ Ferma</button>
-    <button class="secondario" onclick="resetGioco19()">⏮ Imposta alle 19:00</button>  <div id="mappaAdmin"></div>
+    <button type="button" onclick="avviaGioco()">▶ Avvia (riprende da dove è fermo)</button>
+    <button type="button" class="secondario" onclick="fermaGioco()">⏸ Ferma</button>
+    <button type="button" class="secondario" onclick="resetGioco19()">⏮ Imposta alle 19:00</button>
+  </div>
+  <div id="mappaAdmin"></div>
   <div id="listaUtenti">
     <h3 style="margin-top:0">👥 Partecipanti online</h3>
     <div id="contenutoLista">Nessun partecipante online al momento.</div>
   </div>
   <div style="padding:16px;">
-    <button class="btn btn-rosso" onclick="esci()">Esci dall'area admin</button>
+    <button type="button" class="btn btn-rosso" onclick="esci()">Esci dall'area admin</button>
   </div>
 </div>
 
@@ -240,7 +241,19 @@ const MS_19_00 = 19 * 60 * 60 * 1000;
 
 function avviaGioco() {
   let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : MS_19_00;
-  if (!tempoCorrente || tempoCorrente === 0) tempoCorrente = MS_19_00
+  if (!tempoCorrente || tempoCorrente === 0) tempoCorrente = MS_19_00;
+
+  refGioco.set({ attivo: true, gioco0: tempoCorrente, reale0: Date.now() });
+}
+
+function fermaGioco() {
+  let tempoCorrente = (statoGioco && typeof tempoGioco === 'function') ? tempoGioco(statoGioco) : MS_19_00;
+  refGioco.set({ attivo: false, gioco0: tempoCorrente, reale0: Date.now() });
+}
+
+function resetGioco19() {
+  refGioco.set({ attivo: false, gioco0: MS_19_00, reale0: Date.now() });
+}
 </script>
 </body>
 </html>
