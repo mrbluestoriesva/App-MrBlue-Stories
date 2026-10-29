@@ -178,9 +178,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(mappaLeaflet);
 
-// Aggiunta marker delle prove con stile
+// Aggiunta zone (cerchi di 10 metri) per ciascuna prova
 PROVE.forEach(p => {
-  L.marker([p.lat, p.lng]).addTo(mappaLeaflet).bindPopup(
+  L.circle([p.lat, p.lng], {
+    radius: 10,           // Raggio reale in metri
+    color: '#00ff88',      // Colore del bordo (verde neon stile cyberpunk)
+    weight: 2,             // Spessore del bordo in pixel
+    fillColor: '#00ff88',  // Colore di riempimento
+    fillOpacity: 0.35      // Trasparenza dell'area (0.35 = 35%)
+  }).addTo(mappaLeaflet).bindPopup(
     `<b>${icona(p.tipo)} ${p.nome}</b><br>🕒 ${p.orario}<br><span style="opacity:0.8; font-size:0.85rem;">${p.descrizione}</span>`
   );
 });
